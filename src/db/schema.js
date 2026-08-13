@@ -13,7 +13,10 @@ export const MIGRATIONS = [
     genre           TEXT,
     topics          TEXT,           -- JSON array
     age_min         INTEGER,
-    age_max         INTEGER,
+    age_max         INTEGER,        -- NULL with a set age_min means "16+"
+    description     TEXT,
+    page_count      INTEGER,
+    year            INTEGER,
     series_id       INTEGER REFERENCES series(id),
     series_position REAL,           -- REAL so 0.5 "prequel" style entries fit
     added_at        TEXT NOT NULL,

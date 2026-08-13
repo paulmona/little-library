@@ -11,6 +11,9 @@ export const ENRICHABLE_FIELDS = [
   'topics',
   'age_min',
   'age_max',
+  'description',
+  'page_count',
+  'year',
 ];
 
 const JSON_FIELDS = new Set(['topics']);

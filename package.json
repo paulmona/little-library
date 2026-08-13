@@ -10,6 +10,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "demo": "node src/server.js --demo",
+    "import": "node src/import/cli.js",
     "test": "node --test"
   },
   "dependencies": {

@@ -84,3 +84,20 @@ in mind before pointing anything public at it.
 ## Licence
 
 [Apache 2.0](LICENSE).
+
+## Working with a real library locally
+
+The repo ships synthetic sample data only. To develop against a real catalogue
+exported from the original static generator:
+
+```sh
+npm run import -- /path/to/books.json   # one-off, into the configured database
+npm start                               # serves that database
+```
+
+`npm run demo` starts against the synthetic sample instead, with nothing
+persisted — that's what tests and CI use.
+
+Real data stays local: `books.json`, `*.db` and `data/` are all gitignored, and
+commits contain sample data only. A catalogue of books is also a description of
+a home, so it does not belong in a public repo.
