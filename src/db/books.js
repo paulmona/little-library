@@ -122,12 +122,20 @@ export function clearOverride(db, isbn, field) {
   db.prepare('DELETE FROM field_overrides WHERE isbn = ? AND field = ?').run(isbn, field);
 }
 
+// SQLite sorts NULL before text, which would put books that were scanned but
+// never enriched at the very top of every list — the least useful cards leading
+// the grid. Push empty values to the end of every sort instead.
+const nullsLast = (column) => `(${column} IS NULL OR ${column} = '')`;
+
+// The title tiebreak gets the same treatment, or an unenriched book climbs back
+// up whenever it ties on the primary key.
+const byTitle = `${nullsLast('b.title')}, b.title COLLATE NOCASE`;
+
 const SORTS = {
-  title: 'ORDER BY b.title COLLATE NOCASE',
-  author: 'ORDER BY b.author COLLATE NOCASE',
+  title: `ORDER BY ${byTitle}`,
+  author: `ORDER BY ${nullsLast('b.author')}, b.author COLLATE NOCASE, ${byTitle}`,
   added: 'ORDER BY b.added_at DESC',
-  // Books with no genre sort last rather than heading the list.
-  genre: "ORDER BY (b.genre IS NULL OR b.genre = ''), b.genre COLLATE NOCASE, b.title COLLATE NOCASE",
+  genre: `ORDER BY ${nullsLast('b.genre')}, b.genre COLLATE NOCASE, ${byTitle}`,
 };
 
 export function listBooks(db, { sort = 'title' } = {}) {

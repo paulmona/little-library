@@ -92,6 +92,17 @@ test('genreless books sort last', () => {
   assert.deepEqual(new Set(tail), genreless);
 });
 
+test('books with no title sort last in every order, not first', () => {
+  // Found by running it: SQLite puts NULL before text, so the one book that was
+  // scanned but never enriched led the grid on the default sort.
+  const db = loaded();
+
+  for (const sort of ['title', 'author', 'genre']) {
+    const last = listBooks(db, { sort }).at(-1);
+    assert.equal(last.isbn, '9790000000602', `unenriched book should be last when sorting by ${sort}`);
+  }
+});
+
 test('standalone books outnumber series books', () => {
   const db = loaded();
   const books = listBooks(db);
