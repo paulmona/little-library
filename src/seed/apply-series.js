@@ -58,11 +58,8 @@ function seed(group, readInOrder) {
   linked += present.length;
 }
 
-console.log(`\n=== Continuing stories (${proposal.continuingStories.length}) — these warn when gifting ===\n`);
+console.log(`\n=== ${proposal.continuingStories.length} series where reading order matters ===\n`);
 for (const group of proposal.continuingStories) seed(group, true);
-
-console.log(`\n=== Standalone sets (${proposal.standaloneSets.length}) — grouped, but no gifting warning ===\n`);
-for (const group of proposal.standaloneSets) seed(group, false);
 
 console.log('');
 if (missing.length) {
