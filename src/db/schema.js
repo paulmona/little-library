@@ -22,15 +22,15 @@ export const MIGRATIONS = [
   );
 
   CREATE TABLE series (
-    name               TEXT PRIMARY KEY,
-    id                 INTEGER UNIQUE,
+    id                 INTEGER PRIMARY KEY,
+    name               TEXT NOT NULL UNIQUE,
     total_known        INTEGER,     -- NULL means genuinely unknown, never assume
     must_read_in_order INTEGER NOT NULL DEFAULT 0,
     wikidata_id        TEXT
   );
 
   CREATE TABLE series_entries (
-    series_id INTEGER NOT NULL,
+    series_id INTEGER NOT NULL REFERENCES series(id) ON DELETE CASCADE,
     position  REAL NOT NULL,
     title     TEXT NOT NULL,
     isbn      TEXT,                 -- NULL when it is a book the library does not own

@@ -1,0 +1,97 @@
+{
+  "_comment": [
+    "Synthetic library used for tests and for `npm start -- --demo`.",
+    "No real catalogue is in this repo. ISBNs are deliberately fake (979-0-000-*)",
+    "so they can never collide with a real book, and covers are null so the",
+    "missing-cover path gets exercised rather than hidden.",
+    "Between them these books cover every series display state the UI must handle."
+  ],
+
+  "series": [
+    {
+      "name": "The Lantern Keepers",
+      "total_known": 5,
+      "must_read_in_order": true,
+      "_state": "COMPLETE - every entry owned",
+      "entries": [
+        { "position": 1, "title": "The Lantern Keepers", "isbn": "9790000000101" },
+        { "position": 2, "title": "The Salt Road", "isbn": "9790000000102" },
+        { "position": 3, "title": "Winter's Ledger", "isbn": "9790000000103" },
+        { "position": 4, "title": "The Drowned Bell", "isbn": "9790000000104" },
+        { "position": 5, "title": "Last Light", "isbn": "9790000000105" }
+      ]
+    },
+    {
+      "name": "Marbury Wood",
+      "total_known": 6,
+      "must_read_in_order": true,
+      "_state": "HAS BOOK 1, INCOMPLETE - someone can start it",
+      "entries": [
+        { "position": 1, "title": "The Fox and the Fieldmouse", "isbn": "9790000000201" },
+        { "position": 2, "title": "Acorn Winter", "isbn": null },
+        { "position": 3, "title": "The Long Burrow", "isbn": "9790000000203" },
+        { "position": 4, "title": "Thistledown", "isbn": null },
+        { "position": 5, "title": "The Hollow Oak", "isbn": null },
+        { "position": 6, "title": "Spring Again", "isbn": "9790000000206" }
+      ]
+    },
+    {
+      "name": "The Orrery Sequence",
+      "total_known": 4,
+      "must_read_in_order": true,
+      "_state": "MISSING BOOK 1 - owns 2 and 4 only, the case Karen cares about",
+      "entries": [
+        { "position": 1, "title": "Brass and Bone", "isbn": null },
+        { "position": 2, "title": "The Copper Orrery", "isbn": "9790000000302" },
+        { "position": 3, "title": "Nine Turnings", "isbn": null },
+        { "position": 4, "title": "The Glass Meridian", "isbn": "9790000000304" }
+      ]
+    },
+    {
+      "name": "Detective Pepper",
+      "total_known": null,
+      "must_read_in_order": false,
+      "_state": "UNKNOWN TOTAL - standalone mysteries, must not render as 'N of N'",
+      "entries": [
+        { "position": 1, "title": "Detective Pepper and the Missing Bicycle", "isbn": "9790000000401" },
+        { "position": 2, "title": "Detective Pepper Goes to Sea", "isbn": "9790000000402" }
+      ]
+    }
+  ],
+
+  "books": [
+    { "isbn": "9790000000101", "title": "The Lantern Keepers", "author": "Nell Ashgrove", "genre": "Fantasy", "topics": ["adventure", "friendship"], "age_min": 9, "age_max": 12, "added_at": "2026-01-04T10:00:00Z", "series": "The Lantern Keepers", "series_position": 1 },
+    { "isbn": "9790000000102", "title": "The Salt Road", "author": "Nell Ashgrove", "genre": "Fantasy", "topics": ["adventure"], "age_min": 9, "age_max": 12, "added_at": "2026-01-04T10:01:00Z", "series": "The Lantern Keepers", "series_position": 2 },
+    { "isbn": "9790000000103", "title": "Winter's Ledger", "author": "Nell Ashgrove", "genre": "Fantasy", "topics": ["adventure"], "age_min": 10, "age_max": 13, "added_at": "2026-01-04T10:02:00Z", "series": "The Lantern Keepers", "series_position": 3 },
+    { "isbn": "9790000000104", "title": "The Drowned Bell", "author": "Nell Ashgrove", "genre": "Fantasy", "topics": ["adventure"], "age_min": 10, "age_max": 13, "added_at": "2026-01-04T10:03:00Z", "series": "The Lantern Keepers", "series_position": 4 },
+    { "isbn": "9790000000105", "title": "Last Light", "author": "Nell Ashgrove", "genre": "Fantasy", "topics": ["adventure"], "age_min": 10, "age_max": 14, "added_at": "2026-01-04T10:04:00Z", "series": "The Lantern Keepers", "series_position": 5 },
+
+    { "isbn": "9790000000201", "title": "The Fox and the Fieldmouse", "author": "Bram Whitlow", "genre": "Animal stories", "topics": ["animals", "seasons"], "age_min": 6, "age_max": 9, "added_at": "2026-02-11T09:00:00Z", "series": "Marbury Wood", "series_position": 1 },
+    { "isbn": "9790000000203", "title": "The Long Burrow", "author": "Bram Whitlow", "genre": "Animal stories", "topics": ["animals"], "age_min": 6, "age_max": 9, "added_at": "2026-02-11T09:01:00Z", "series": "Marbury Wood", "series_position": 3 },
+    { "isbn": "9790000000206", "title": "Spring Again", "author": "Bram Whitlow", "genre": "Animal stories", "topics": ["animals"], "age_min": 6, "age_max": 9, "added_at": "2026-02-11T09:02:00Z", "series": "Marbury Wood", "series_position": 6 },
+
+    { "isbn": "9790000000302", "title": "The Copper Orrery", "author": "Ilse Vantar", "genre": "Science fiction", "topics": ["invention", "mystery"], "age_min": 11, "age_max": 14, "added_at": "2026-03-02T14:00:00Z", "series": "The Orrery Sequence", "series_position": 2 },
+    { "isbn": "9790000000304", "title": "The Glass Meridian", "author": "Ilse Vantar", "genre": "Science fiction", "topics": ["invention"], "age_min": 11, "age_max": 14, "added_at": "2026-03-02T14:01:00Z", "series": "The Orrery Sequence", "series_position": 4 },
+
+    { "isbn": "9790000000401", "title": "Detective Pepper and the Missing Bicycle", "author": "Marguerite Soto", "genre": "Mystery", "topics": ["detective", "humour"], "age_min": 7, "age_max": 10, "added_at": "2026-03-20T11:00:00Z", "series": "Detective Pepper", "series_position": 1 },
+    { "isbn": "9790000000402", "title": "Detective Pepper Goes to Sea", "author": "Marguerite Soto", "genre": "Mystery", "topics": ["detective"], "age_min": 7, "age_max": 10, "added_at": "2026-03-20T11:01:00Z", "series": "Detective Pepper", "series_position": 2 },
+
+    { "isbn": "9790000000501", "title": "The Cartographer's Daughter", "author": "Junia Okonkwo", "genre": "Historical fiction", "topics": ["maps", "exploration"], "age_min": 10, "age_max": 14, "added_at": "2026-01-15T08:00:00Z" },
+    { "isbn": "9790000000502", "title": "Eleven Kites", "author": "Junia Okonkwo", "genre": "Historical fiction", "topics": ["family"], "age_min": 9, "age_max": 12, "added_at": "2026-01-16T08:00:00Z" },
+    { "isbn": "9790000000503", "title": "A Very Loud Library", "author": "Petra Nilsen", "genre": "Picture book", "topics": ["humour", "libraries"], "age_min": 3, "age_max": 6, "added_at": "2026-01-20T08:00:00Z" },
+    { "isbn": "9790000000504", "title": "Goodnight, Lighthouse", "author": "Petra Nilsen", "genre": "Picture book", "topics": ["bedtime"], "age_min": 2, "age_max": 5, "added_at": "2026-01-21T08:00:00Z" },
+    { "isbn": "9790000000505", "title": "How to Build a Raft", "author": "Desmond Achebe", "genre": "Non-fiction", "topics": ["making", "outdoors"], "age_min": 8, "age_max": 12, "added_at": "2026-02-01T08:00:00Z" },
+    { "isbn": "9790000000506", "title": "Small Machines", "author": "Desmond Achebe", "genre": "Non-fiction", "topics": ["engineering"], "age_min": 8, "age_max": 12, "added_at": "2026-02-02T08:00:00Z" },
+    { "isbn": "9790000000507", "title": "The Quiet Astronomer", "author": "Rosalind Vey", "genre": "Non-fiction", "topics": ["space", "biography"], "age_min": 9, "age_max": 13, "added_at": "2026-02-14T08:00:00Z" },
+    { "isbn": "9790000000508", "title": "Tide Pools", "author": "Rosalind Vey", "genre": "Non-fiction", "topics": ["nature", "sea"], "age_min": 6, "age_max": 10, "added_at": "2026-02-15T08:00:00Z" },
+    { "isbn": "9790000000509", "title": "The Boy Who Counted Rain", "author": "Tomas Lindqvist", "genre": "Fiction", "topics": ["friendship", "grief"], "age_min": 10, "age_max": 14, "added_at": "2026-03-05T08:00:00Z" },
+    { "isbn": "9790000000510", "title": "Paper Aeroplanes", "author": "Tomas Lindqvist", "genre": "Fiction", "topics": ["school"], "age_min": 9, "age_max": 12, "added_at": "2026-03-06T08:00:00Z" },
+    { "isbn": "9790000000511", "title": "The Bramble Gate", "author": "Aoife Sterling", "genre": "Fantasy", "topics": ["magic"], "age_min": 8, "age_max": 12, "added_at": "2026-03-18T08:00:00Z" },
+    { "isbn": "9790000000512", "title": "Nightjar", "author": "Aoife Sterling", "genre": "Fantasy", "topics": ["magic", "birds"], "age_min": 10, "age_max": 13, "added_at": "2026-03-19T08:00:00Z" },
+    { "isbn": "9790000000513", "title": "Recipes for Rainy Days", "author": "Hana Duval", "genre": "Cookery", "topics": ["cooking", "family"], "age_min": 7, "age_max": 12, "added_at": "2026-04-01T08:00:00Z" },
+    { "isbn": "9790000000514", "title": "The Museum at Midnight", "author": "Hana Duval", "genre": "Fiction", "topics": ["museums", "mystery"], "age_min": 9, "age_max": 12, "added_at": "2026-04-02T08:00:00Z" },
+
+    { "_state": "NO GENRE - must sort last, not first", "isbn": "9790000000601", "title": "An Unsorted Book", "author": "Wren Halloway", "topics": [], "added_at": "2026-04-10T08:00:00Z" },
+    { "_state": "MINIMAL - scanned but never enriched, everything unknown", "isbn": "9790000000602", "added_at": "2026-04-12T08:00:00Z" }
+  ]
+}
