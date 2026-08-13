@@ -233,3 +233,42 @@ a.logo { text-decoration: none; color: inherit; }
 
 .series-entry a { color: inherit; }
 .series-entry.missing em { color: var(--text3); font-size: 12px; }
+
+/* ------------------------------------------------- series flags & missing */
+
+.header-link { font-family: var(--sans); font-size: 13px; color: var(--accent-text); text-decoration: none; }
+.header-link:hover { text-decoration: underline; }
+
+/* Never colour alone: each state carries its own words, and the warning
+   additionally carries weight and a border. */
+.series-flag {
+  display: inline-block; margin-bottom: 6px; padding: 2px 7px; border-radius: 4px;
+  font-family: var(--sans); font-size: 10px; font-weight: 600; letter-spacing: .2px;
+}
+.series-flag.warn { background: #fdecea; color: #8a1f11; border: 1px solid #f0b4ac; }
+.series-flag.part { background: var(--accent-light); color: var(--accent-text); }
+.series-flag.done { background: var(--blue-light); color: var(--blue-text); }
+
+.tag-warn { background: #fdecea; color: #8a1f11; }
+
+.page-title { font-size: 24px; font-weight: normal; margin-bottom: .35rem; }
+.missing-block {
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+  padding: 1rem 1.15rem; margin-bottom: 1rem;
+}
+.missing-block h2 { font-size: 17px; font-weight: normal; margin-bottom: .3rem; }
+.miss-label {
+  font-family: var(--sans); font-size: 11px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px;
+}
+.miss-nums { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: .8rem; }
+.miss-num {
+  min-width: 30px; text-align: center; padding: 5px 8px; border-radius: 6px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--text);
+}
+.missing-block details { font-family: var(--sans); font-size: 13px; }
+.missing-block summary { color: var(--text3); cursor: pointer; }
+.have-list { list-style: none; margin-top: 8px; color: var(--text2); }
+.have-list li { padding: 3px 0; }
+.have-list .pos { color: var(--text3); display: inline-block; min-width: 2em; }

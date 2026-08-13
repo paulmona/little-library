@@ -191,3 +191,30 @@ export function seriesState(db, seriesId) {
     completeness,
   };
 }
+
+/**
+ * State for every series in one pass, so the grid can show completeness on each
+ * card without a query per book.
+ */
+export function allSeriesStates(db) {
+  const states = new Map();
+  for (const series of listSeries(db)) {
+    states.set(series.id, seriesState(db, series.id));
+  }
+  return states;
+}
+
+/**
+ * Series Karen has started but not finished, for the missing-books view.
+ *
+ * Only series with a known total can say what is missing; one without a total
+ * is honestly excluded rather than padded out with guesses. Sorted by how close
+ * she is to finishing, because a series needing one more book is the one worth
+ * looking for at a sale.
+ */
+export function incompleteSeries(db) {
+  return [...allSeriesStates(db).values()]
+    .filter((state) => state.owned > 0 && state.missingPositions.length > 0)
+    .sort((a, b) => a.missingPositions.length - b.missingPositions.length
+      || a.name.localeCompare(b.name));
+}

@@ -11,6 +11,7 @@ import {
 import {
   getSeriesEntries, listSeriesWithCounts, getSeriesById, createSeries, updateSeries,
   addBooksToSeries, removeBookFromSeries, booksBySameAuthor, seriesState,
+  allSeriesStates, incompleteSeries,
 } from './db/series.js';
 import { inferSeries } from './enrich/infer.js';
 import { loadSampleLibrary } from './sample/load.js';
@@ -28,6 +29,7 @@ export function buildServer(config, db) {
   // Book detail is a client-side route. Serve the shell so a deep link or a
   // refresh on /book/<isbn> works rather than 404ing.
   app.get('/book/:isbn', (request, reply) => reply.sendFile('index.html'));
+  app.get('/missing', (request, reply) => reply.sendFile('index.html'));
 
   app.get('/health', async () => ({
     status: 'ok',
@@ -46,8 +48,45 @@ export function buildServer(config, db) {
     // person might edit by hand, and a broken sort shouldn't mean a broken page.
     const sort = VALID_SORTS.has(requested) ? requested : 'title';
 
-    return { sort, books: listBooks(db, { sort }) };
+    // Series state is computed once for the whole library rather than per book.
+    // Only the handful of fields a card actually draws are attached.
+    const states = allSeriesStates(db);
+    const books = listBooks(db, { sort }).map((book) => {
+      const state = book.series_id ? states.get(book.series_id) : null;
+      if (!state) return book;
+
+      return {
+        ...book,
+        series: {
+          name: state.name,
+          total: state.total_known,
+          owned: state.owned,
+          readInOrder: state.must_read_in_order,
+          completeness: state.completeness,
+          missingCount: state.missingPositions.length,
+        },
+      };
+    });
+
+    return { sort, books };
   });
+
+  /**
+   * The garage-sale cheat sheet: series she has started and not finished.
+   * Served entirely from SQLite so it works on bad signal in someone's driveway.
+   */
+  app.get('/api/missing', async () => ({
+    series: incompleteSeries(db).map((state) => ({
+      id: state.id,
+      name: state.name,
+      total: state.total_known,
+      owned: state.owned,
+      readInOrder: state.must_read_in_order,
+      have: state.ownedPositions,
+      missing: state.missingPositions,
+      books: state.books.map((b) => ({ isbn: b.isbn, title: b.title, position: b.series_position })),
+    })),
+  }));
 
   app.get('/api/books/:isbn', async (request, reply) => {
     const book = getBook(db, request.params.isbn);

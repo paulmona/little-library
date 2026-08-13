@@ -70,6 +70,44 @@ function coverMarkup(book, { large = false } = {}) {
     </div>`;
 }
 
+
+/**
+ * Series state on the card. Karen's actual need, corrected twice in the
+ * original conversation: while scrolling she wants to notice that a book
+ * belongs to a must-read-in-order series at all, so she does not gift book 4
+ * of something. It is not about highlighting what she is missing.
+ *
+ * Never colour alone — every state carries words too.
+ */
+function seriesBadge(book) {
+  if (!book.series) {
+    // Books grouped without a story arc still show their series name quietly.
+    return book.series_name
+      ? `<div class="card-series">${text(book.series_name)}${book.series_position ? ` &middot; #${text(book.series_position)}` : ''}</div>`
+      : '';
+  }
+
+  const { name, total, readInOrder, completeness } = book.series;
+  const position = book.series_position;
+  const place = position && total ? `#${position} of ${total}` : position ? `#${position}` : '';
+
+  if (!readInOrder) {
+    return `<div class="card-series">${text(name)}${place ? ` &middot; ${text(place)}` : ''}</div>`;
+  }
+
+  const states = {
+    'no-first': ['warn', 'Start with book 1'],
+    started: ['part', 'Read in order'],
+    complete: ['done', 'Complete series'],
+    unknown: ['part', 'Read in order'],
+  };
+  const [cls, label] = states[completeness] ?? states.unknown;
+
+  return `
+    <div class="card-series">${text(name)}${place ? ` &middot; ${text(place)}` : ''}</div>
+    <div class="series-flag ${cls}">${text(label)}</div>`;
+}
+
 // ---------------------------------------------------------------- grid view
 
 function cardMarkup(book) {
@@ -81,9 +119,7 @@ function cardMarkup(book) {
     tags.push(`<span class="tag tag-theme">${text(topic)}</span>`);
   }
 
-  const series = book.series_name
-    ? `<div class="card-series">${text(book.series_name)}${book.series_position ? ` &middot; #${text(book.series_position)}` : ''}</div>`
-    : '';
+  const series = seriesBadge(book);
 
   return `
     <a class="book-card" href="/book/${encodeURIComponent(book.isbn)}" data-isbn="${text(book.isbn)}">
@@ -508,18 +544,77 @@ detailView.addEventListener('click', (event) => {
   if (action === 'leave-series') leaveSeries();
 });
 
+
+// --------------------------------------------------------- missing books view
+
+/**
+ * The list Karen carries. Only series she has started, ordered by how close she
+ * is to finishing, because a series needing one more book is the one worth
+ * looking for at a sale.
+ */
+async function showMissing() {
+  gridView.hidden = true;
+  detailView.hidden = false;
+  detailView.innerHTML = '<div class="empty-state">Loading…</div>';
+
+  const { series } = await (await fetch('/api/missing')).json();
+
+  if (!series.length) {
+    detailView.innerHTML = `
+      <a class="back" href="/">&larr; All books</a>
+      <div class="empty-state"><div class="big">&#127881;</div>
+      <div>Nothing missing from any series you've started.</div></div>`;
+    return;
+  }
+
+  const blocks = series.map((s) => {
+    const missing = s.missing.map((n) => `<span class="miss-num">${text(n)}</span>`).join('');
+    const owned = s.books
+      .filter((b) => b.position)
+      .map((b) => `<li><span class="pos">${text(b.position)}.</span> ${text(b.title ?? b.isbn)}</li>`)
+      .join('');
+
+    return `
+      <section class="missing-block">
+        <h2>${text(s.name)}</h2>
+        <p class="series-meta">
+          have ${text(s.owned)} of ${text(s.total)}
+          ${s.readInOrder ? '<span class="tag tag-order">Read in order</span>' : ''}
+          ${!s.have.includes(1) ? '<span class="tag tag-warn">No book 1</span>' : ''}
+        </p>
+        <p class="miss-label">Missing</p>
+        <div class="miss-nums">${missing}</div>
+        <details><summary>${text(s.owned)} you have</summary><ul class="have-list">${owned}</ul></details>
+      </section>`;
+  }).join('');
+
+  detailView.innerHTML = `
+    <a class="back" href="/">&larr; All books</a>
+    <h1 class="page-title">Books to look for</h1>
+    <p class="edit-note">
+      ${text(series.length)} series you've started. Numbers are the book's place in the series —
+      that's what's printed on the spine.
+    </p>
+    ${blocks}`;
+  window.scrollTo(0, 0);
+}
+
 // ------------------------------------------------------------------ routing
 
 function route() {
-  const match = window.location.pathname.match(/^\/book\/(.+)$/);
+  const path = window.location.pathname;
+  const match = path.match(/^\/book\/(.+)$/);
+
   if (match) showDetail(decodeURIComponent(match[1]));
+  else if (path === '/missing') showMissing();
   else showGrid();
 }
 
 document.addEventListener('click', (event) => {
   const link = event.target.closest('a');
   if (!link || link.origin !== window.location.origin) return;
-  if (!link.pathname.startsWith('/book/') && link.pathname !== '/') return;
+  const known = link.pathname.startsWith('/book/') || link.pathname === '/' || link.pathname === '/missing';
+  if (!known) return;
 
   event.preventDefault();
   if (link.pathname.startsWith('/book/')) {
