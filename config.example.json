@@ -1,0 +1,21 @@
+{
+  "port": 8080,
+
+  "databasePath": "./data/library.db",
+
+  "sheet": {
+    "_comment": "Apps Script web app deployed against the sheet the phone scanner writes to. The URL is itself a secret - anyone holding it can read and append.",
+    "gatewayUrl": "https://script.google.com/macros/s/REPLACE_ME/exec",
+    "gatewayToken": "REPLACE_ME"
+  },
+
+  "googleBooks": {
+    "_comment": "Required. Anonymous calls to the Books API return 429 once the shared daily quota is spent.",
+    "apiKey": "REPLACE_ME"
+  },
+
+  "library": {
+    "_comment": "Shown in the page header. Keep any real name out of the repo.",
+    "name": "Little Library"
+  }
+}
