@@ -1,30 +1,20 @@
+const shell = document.getElementById('shell');
+const gridView = document.getElementById('grid-view');
+const detailView = document.getElementById('detail-view');
 const grid = document.getElementById('grid');
 const searchInput = document.getElementById('search');
 const sortSelect = document.getElementById('sort');
 
+const SORT_KEY = 'little-library.sort';
+const SCROLL_KEY = 'little-library.scroll';
+
 let allBooks = [];
 
-const SORT_KEY = 'little-library.sort';
-
-/** Titles and authors come from third-party APIs, so never trust them as HTML. */
+/** Titles, authors and descriptions come from third-party APIs. Never trust them as HTML. */
 function text(value) {
   const node = document.createElement('span');
-  node.textContent = value;
+  node.textContent = value ?? '';
   return node.innerHTML;
-}
-
-function coverMarkup(book) {
-  if (book.cover_url) {
-    return `<img src="${text(book.cover_url)}" alt="" loading="lazy">`;
-  }
-  // No jacket. Show the title rather than an empty grey box, so the card is
-  // still identifiable — a real library has plenty of these.
-  return `
-    <div class="cover-spine"></div>
-    <div class="cover-placeholder">
-      <div>&#128214;</div>
-      <div class="ct">${text(book.title ?? 'Not yet identified')}</div>
-    </div>`;
 }
 
 function ageLabel(book) {
@@ -33,12 +23,24 @@ function ageLabel(book) {
   return null;
 }
 
-function cardMarkup(book) {
-  // A book that has been scanned but never enriched is a real state, not an
-  // error. Show the ISBN so it can be found and fixed rather than "undefined".
-  const title = book.title ?? 'Not yet identified';
-  const author = book.author ?? null;
+function formatDate(iso) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
 
+function coverMarkup(book, { large = false } = {}) {
+  if (book.cover_url) return `<img src="${text(book.cover_url)}" alt="" ${large ? '' : 'loading="lazy"'}>`;
+  return `
+    <div class="cover-spine"></div>
+    <div class="cover-placeholder">
+      <div>&#128214;</div>
+      <div class="ct">${text(book.title ?? 'Not yet identified')}</div>
+    </div>`;
+}
+
+// ---------------------------------------------------------------- grid view
+
+function cardMarkup(book) {
   const tags = [];
   if (book.genre) tags.push(`<span class="tag tag-genre">${text(book.genre)}</span>`);
   const age = ageLabel(book);
@@ -52,11 +54,13 @@ function cardMarkup(book) {
     : '';
 
   return `
-    <a class="book-card" href="/api/books/${encodeURIComponent(book.isbn)}">
+    <a class="book-card" href="/book/${encodeURIComponent(book.isbn)}" data-isbn="${text(book.isbn)}">
       <div class="cover">${coverMarkup(book)}</div>
       <div class="card-body">
-        <div class="card-title">${text(title)}</div>
-        ${author ? `<div class="card-author">${text(author)}</div>` : `<div class="card-unknown">ISBN ${text(book.isbn)}</div>`}
+        <div class="card-title">${text(book.title ?? 'Not yet identified')}</div>
+        ${book.author
+          ? `<div class="card-author">${text(book.author)}</div>`
+          : `<div class="card-unknown">ISBN ${text(book.isbn)}</div>`}
         ${series}
         <div class="tags">${tags.join('')}</div>
       </div>
@@ -65,11 +69,12 @@ function cardMarkup(book) {
 
 function matches(book, query) {
   if (!query) return true;
-  const haystack = `${book.title ?? ''} ${book.author ?? ''} ${book.series_name ?? ''}`.toLowerCase();
-  return haystack.includes(query);
+  return `${book.title ?? ''} ${book.author ?? ''} ${book.series_name ?? ''}`
+    .toLowerCase()
+    .includes(query);
 }
 
-function render() {
+function renderGrid() {
   const query = searchInput.value.trim().toLowerCase();
   const visible = allBooks.filter((book) => matches(book, query));
 
@@ -83,6 +88,118 @@ function render() {
     : '<div class="empty-state"><div class="big">&#128269;</div><div>Nothing matches that search.</div></div>';
 }
 
+// -------------------------------------------------------------- detail view
+
+function seriesMarkup(series, currentIsbn) {
+  if (!series) return '';
+
+  const entries = series.entries.map((entry) => {
+    const owned = Boolean(entry.isbn);
+    const here = entry.isbn === currentIsbn;
+    const cls = `series-entry ${owned ? 'owned' : 'missing'}${here ? ' current' : ''}`;
+    const mark = owned ? '&#10003;' : '&mdash;';
+    return `<li class="${cls}"><span class="mark">${mark}</span> <span class="pos">${text(entry.position)}.</span> ${text(entry.title)}</li>`;
+  }).join('');
+
+  const owned = series.entries.filter((e) => e.isbn).length;
+  // Never present a total we don't actually know.
+  const count = series.totalKnown
+    ? `${owned} of ${series.totalKnown}`
+    : `${owned} of an unknown number`;
+
+  return `
+    <section class="detail-block">
+      <h2>${text(series.name)}</h2>
+      <p class="series-meta">
+        ${text(count)}
+        ${series.mustReadInOrder ? '<span class="tag tag-order">Read in order</span>' : ''}
+      </p>
+      <ul class="series-list">${entries}</ul>
+    </section>`;
+}
+
+function detailMarkup(book) {
+  const facts = [
+    ['Author', book.author],
+    ['Genre', book.genre],
+    ['Ages', ageLabel(book)],
+    ['Published', book.year],
+    ['Pages', book.page_count],
+    ['ISBN', book.isbn],
+    ['Added', formatDate(book.added_at)],
+    ['Last edited', formatDate(book.edited_at)],
+  ].filter(([, value]) => value !== null && value !== undefined && value !== '');
+
+  const topics = (book.topics ?? []).map((t) => `<span class="tag tag-theme">${text(t)}</span>`).join('');
+
+  return `
+    <a class="back" href="/">&larr; All books</a>
+    <div class="detail">
+      <div class="detail-cover">${coverMarkup(book, { large: true })}</div>
+      <div class="detail-main">
+        <h1>${text(book.title ?? 'Not yet identified')}</h1>
+        ${book.title ? '' : '<p class="card-unknown">This book was scanned but never looked up.</p>'}
+        ${topics ? `<div class="tags">${topics}</div>` : ''}
+        ${book.description ? `<p class="description">${text(book.description)}</p>` : ''}
+        <dl class="facts">
+          ${facts.map(([label, value]) => `<dt>${text(label)}</dt><dd>${text(value)}</dd>`).join('')}
+        </dl>
+      </div>
+    </div>
+    ${seriesMarkup(book.series, book.isbn)}`;
+}
+
+async function showDetail(isbn) {
+  gridView.hidden = true;
+  detailView.hidden = false;
+  detailView.innerHTML = '<div class="empty-state">Loading…</div>';
+
+  const res = await fetch(`/api/books/${encodeURIComponent(isbn)}`);
+  if (!res.ok) {
+    detailView.innerHTML = '<a class="back" href="/">&larr; All books</a><div class="empty-state"><div class="big">&#128533;</div><div>No such book.</div></div>';
+    return;
+  }
+
+  const book = await res.json();
+  detailView.innerHTML = detailMarkup(book);
+  document.title = book.title ?? 'Little Library';
+  window.scrollTo(0, 0);
+}
+
+function showGrid() {
+  detailView.hidden = true;
+  gridView.hidden = false;
+  renderGrid();
+  // Coming back from a book should land where you left off, not at the top.
+  const saved = Number(sessionStorage.getItem(SCROLL_KEY) ?? 0);
+  window.scrollTo(0, saved);
+}
+
+// ------------------------------------------------------------------ routing
+
+function route() {
+  const match = window.location.pathname.match(/^\/book\/(.+)$/);
+  if (match) showDetail(decodeURIComponent(match[1]));
+  else showGrid();
+}
+
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('a');
+  if (!link || link.origin !== window.location.origin) return;
+  if (!link.pathname.startsWith('/book/') && link.pathname !== '/') return;
+
+  event.preventDefault();
+  if (link.pathname.startsWith('/book/')) {
+    sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+  }
+  window.history.pushState({}, '', link.pathname);
+  route();
+});
+
+window.addEventListener('popstate', route);
+
+// -------------------------------------------------------------------- boot
+
 async function load() {
   const sort = sortSelect.value;
   localStorage.setItem(SORT_KEY, sort);
@@ -92,23 +209,21 @@ async function load() {
     fetch('/api/stats'),
   ]);
 
-  const { books } = await booksRes.json();
+  allBooks = (await booksRes.json()).books;
   const stats = await statsRes.json();
 
-  allBooks = books;
   document.getElementById('library-name').textContent = stats.library;
-  document.title = stats.library;
   document.getElementById('stat-books').textContent = stats.books;
   document.getElementById('stat-authors').textContent = stats.authors;
 
-  render();
+  route();
 }
 
 sortSelect.value = localStorage.getItem(SORT_KEY) ?? 'title';
-sortSelect.addEventListener('change', load);
-searchInput.addEventListener('input', render);
+sortSelect.addEventListener('change', () => load());
+searchInput.addEventListener('input', renderGrid);
 
 load().catch((err) => {
-  grid.innerHTML = '<div class="empty-state"><div class="big">&#9888;</div><div>Could not reach the library.</div></div>';
+  shell.innerHTML = '<div class="empty-state"><div class="big">&#9888;</div><div>Could not reach the library.</div></div>';
   console.error(err);
 });

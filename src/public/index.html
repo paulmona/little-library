@@ -8,34 +8,37 @@
 </head>
 <body>
 <header>
-  <div class="logo">
+  <a class="logo" href="/">
     <div class="logo-icon">&#128218;</div>
     <h1 id="library-name">Little Library</h1>
-  </div>
-  <div class="header-note" id="header-note"></div>
+  </a>
 </header>
 
-<main>
-  <div class="stats-row">
-    <div class="stat"><div class="stat-num" id="stat-books">&mdash;</div><div class="stat-label">Books</div></div>
-    <div class="stat"><div class="stat-num" id="stat-authors">&mdash;</div><div class="stat-label">Authors</div></div>
-    <div class="stat"><div class="stat-num" id="stat-shown">&mdash;</div><div class="stat-label">Showing</div></div>
-  </div>
-
-  <div class="filters">
-    <div class="search-wrap">
-      <input id="search" type="search" placeholder="Search title or author" autocomplete="off">
+<main id="shell">
+  <div id="grid-view">
+    <div class="stats-row">
+      <div class="stat"><div class="stat-num" id="stat-books">&mdash;</div><div class="stat-label">Books</div></div>
+      <div class="stat"><div class="stat-num" id="stat-authors">&mdash;</div><div class="stat-label">Authors</div></div>
+      <div class="stat"><div class="stat-num" id="stat-shown">&mdash;</div><div class="stat-label">Showing</div></div>
     </div>
-    <select id="sort" aria-label="Sort books">
-      <option value="title">Title</option>
-      <option value="author">Author</option>
-      <option value="added">Recently added</option>
-      <option value="genre">Genre</option>
-    </select>
+
+    <div class="filters">
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="Search title or author" autocomplete="off">
+      </div>
+      <select id="sort" aria-label="Sort books">
+        <option value="title">Title</option>
+        <option value="author">Author</option>
+        <option value="added">Recently added</option>
+        <option value="genre">Genre</option>
+      </select>
+    </div>
+
+    <div class="results-meta" id="results-meta"></div>
+    <div class="grid" id="grid"></div>
   </div>
 
-  <div class="results-meta" id="results-meta"></div>
-  <div class="grid" id="grid"></div>
+  <div id="detail-view" hidden></div>
 </main>
 
 <script src="/app.js" type="module"></script>

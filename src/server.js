@@ -18,6 +18,10 @@ export function buildServer(config, db) {
 
   app.register(fastifyStatic, { root: PUBLIC_DIR });
 
+  // Book detail is a client-side route. Serve the shell so a deep link or a
+  // refresh on /book/<isbn> works rather than 404ing.
+  app.get('/book/:isbn', (request, reply) => reply.sendFile('index.html'));
+
   app.get('/health', async () => ({
     status: 'ok',
     library: config.library.name,

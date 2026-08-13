@@ -91,3 +91,17 @@ test('the frontend is served', async () => {
   assert.equal(res.statusCode, 200);
   assert.match(res.body, /<div class="grid" id="grid">/);
 });
+
+test('deep-linking to a book serves the app shell, not a 404', async () => {
+  // The card used to link straight at the API and render raw JSON in the
+  // browser. /book/<isbn> must serve the page so a refresh or a shared link works.
+  const res = await app().inject({ url: '/book/9790000000302' });
+  assert.equal(res.statusCode, 200);
+  assert.match(res.body, /<div id="detail-view"/);
+});
+
+test('the grid links to the app route, never to the API', async () => {
+  const res = await app().inject({ url: '/app.js' });
+  assert.match(res.body, /href="\/book\//);
+  assert.doesNotMatch(res.body, /class="book-card" href="\/api\//);
+});
