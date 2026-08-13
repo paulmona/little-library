@@ -105,3 +105,25 @@ test('the grid links to the app route, never to the API', async () => {
   assert.match(res.body, /href="\/book\//);
   assert.doesNotMatch(res.body, /class="book-card" href="\/api\//);
 });
+
+test('the list endpoint omits fields the grid never renders', async () => {
+  // description alone was 201 KB of a 584 KB response across a real 643-book
+  // library. The detail endpoint still returns it.
+  const { books } = (await app().inject({ url: '/api/books' })).json();
+  const book = books.find((b) => b.title);
+
+  assert.equal(book.description, undefined, 'description belongs to the detail view only');
+  assert.equal(book.page_count, undefined);
+  assert.equal(book.year, undefined);
+
+  // Everything a card draws must still be there.
+  for (const field of ['isbn', 'title', 'author', 'cover_url', 'genre', 'topics']) {
+    assert.ok(field in book, `grid needs ${field}`);
+  }
+});
+
+test('the detail endpoint still returns the full record', async () => {
+  const body = (await app().inject({ url: '/api/books/9790000000501' })).json();
+  assert.ok('description' in body);
+  assert.ok('year' in body);
+});

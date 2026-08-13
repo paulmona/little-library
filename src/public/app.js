@@ -5,10 +5,42 @@ const grid = document.getElementById('grid');
 const searchInput = document.getElementById('search');
 const sortSelect = document.getElementById('sort');
 
+const pageSizeSelect = document.getElementById('page-size');
+const pageSizeCustom = document.getElementById('page-size-custom');
+const pager = document.getElementById('pager');
+
 const SORT_KEY = 'little-library.sort';
 const SCROLL_KEY = 'little-library.scroll';
+const PAGE_SIZE_KEY = 'little-library.pageSize';
 
 let allBooks = [];
+let page = 1;
+
+/** Stored as a number, or the string 'all'. */
+function pageSize() {
+  const stored = localStorage.getItem(PAGE_SIZE_KEY) ?? '50';
+  if (stored === 'all') return 'all';
+  const n = Number(stored);
+  return Number.isFinite(n) && n > 0 ? n : 50;
+}
+
+function pagerMarkup(totalPages) {
+  if (totalPages <= 1) return '';
+
+  // Window of pages around the current one, so 643 books doesn't render 13 buttons.
+  const nums = new Set([1, totalPages, page, page - 1, page + 1]);
+  const shown = [...nums].filter((n) => n >= 1 && n <= totalPages).sort((a, b) => a - b);
+
+  let html = `<button type="button" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>&larr;</button>`;
+  let previous = 0;
+  for (const n of shown) {
+    if (n - previous > 1) html += '<span class="gap">…</span>';
+    html += `<button type="button" data-page="${n}" ${n === page ? 'aria-current="page"' : ''}>${n}</button>`;
+    previous = n;
+  }
+  html += `<button type="button" data-page="${page + 1}" ${page === totalPages ? 'disabled' : ''}>&rarr;</button>`;
+  return html;
+}
 
 /** Titles, authors and descriptions come from third-party APIs. Never trust them as HTML. */
 function text(value) {
@@ -76,16 +108,31 @@ function matches(book, query) {
 
 function renderGrid() {
   const query = searchInput.value.trim().toLowerCase();
+  // Search spans the whole library, not just the visible page.
   const visible = allBooks.filter((book) => matches(book, query));
 
-  document.getElementById('stat-shown').textContent = visible.length;
-  document.getElementById('results-meta').textContent = query
-    ? `${visible.length} of ${allBooks.length} books match “${query}”`
-    : `${allBooks.length} books`;
+  const size = pageSize();
+  const perPage = size === 'all' ? Math.max(visible.length, 1) : size;
+  const totalPages = Math.max(1, Math.ceil(visible.length / perPage));
+  if (page > totalPages) page = totalPages;
 
-  grid.innerHTML = visible.length
-    ? visible.map(cardMarkup).join('')
+  const start = (page - 1) * perPage;
+  const pageBooks = visible.slice(start, start + perPage);
+
+  document.getElementById('stat-shown').textContent = visible.length;
+
+  const scope = query ? `${visible.length} of ${allBooks.length} books match “${query}”` : `${allBooks.length} books`;
+  const range = visible.length && size !== 'all' && totalPages > 1
+    ? ` — showing ${start + 1}–${start + pageBooks.length}`
+    : '';
+  document.getElementById('results-meta').textContent = scope + range;
+
+  grid.innerHTML = pageBooks.length
+    ? pageBooks.map(cardMarkup).join('')
     : '<div class="empty-state"><div class="big">&#128269;</div><div>Nothing matches that search.</div></div>';
+
+  pager.innerHTML = pagerMarkup(totalPages);
+  pager.hidden = pager.innerHTML === '';
 }
 
 // -------------------------------------------------------------- detail view
@@ -342,9 +389,52 @@ async function load() {
   route();
 }
 
+pager.addEventListener('click', (event) => {
+  const target = event.target.closest('button[data-page]');
+  if (!target || target.disabled) return;
+  page = Number(target.dataset.page);
+  renderGrid();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+function applyPageSize(value) {
+  localStorage.setItem(PAGE_SIZE_KEY, String(value));
+  page = 1;
+  renderGrid();
+}
+
+pageSizeSelect.addEventListener('change', () => {
+  const value = pageSizeSelect.value;
+  pageSizeCustom.hidden = value !== 'custom';
+
+  if (value === 'custom') {
+    pageSizeCustom.value = pageSize() === 'all' ? 50 : pageSize();
+    pageSizeCustom.focus();
+    return;
+  }
+  applyPageSize(value);
+});
+
+pageSizeCustom.addEventListener('change', () => {
+  const n = Number(pageSizeCustom.value);
+  if (Number.isFinite(n) && n > 0) applyPageSize(n);
+});
+
+// Restore the stored size, falling back to Custom when it isn't one of the presets.
+{
+  const stored = String(pageSize());
+  const preset = [...pageSizeSelect.options].some((o) => o.value === stored);
+  pageSizeSelect.value = preset ? stored : 'custom';
+  if (!preset) {
+    pageSizeCustom.hidden = false;
+    pageSizeCustom.value = stored;
+  }
+}
+
 sortSelect.value = localStorage.getItem(SORT_KEY) ?? 'title';
-sortSelect.addEventListener('change', () => load());
-searchInput.addEventListener('input', renderGrid);
+sortSelect.addEventListener('change', () => { page = 1; load(); });
+// A new search should start at the first page, not strand you on page 7 of 2.
+searchInput.addEventListener('input', () => { page = 1; renderGrid(); });
 
 load().catch((err) => {
   shell.innerHTML = '<div class="empty-state"><div class="big">&#9888;</div><div>Could not reach the library.</div></div>';

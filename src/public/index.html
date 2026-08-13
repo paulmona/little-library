@@ -32,10 +32,21 @@
         <option value="added">Recently added</option>
         <option value="genre">Genre</option>
       </select>
+      <select id="page-size" aria-label="Books per page">
+        <option value="10">10 per page</option>
+        <option value="20">20 per page</option>
+        <option value="50">50 per page</option>
+        <option value="100">100 per page</option>
+        <option value="all">Show all</option>
+        <option value="custom">Custom…</option>
+      </select>
+      <input id="page-size-custom" type="number" min="1" max="1000" hidden
+             aria-label="Books per page" placeholder="e.g. 30">
     </div>
 
     <div class="results-meta" id="results-meta"></div>
     <div class="grid" id="grid"></div>
+    <nav class="pager" id="pager" hidden></nav>
   </div>
 
   <div id="detail-view" hidden></div>

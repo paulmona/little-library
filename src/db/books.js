@@ -167,10 +167,18 @@ const SORTS = {
   genre: `ORDER BY ${nullsLast('b.genre')}, b.genre COLLATE NOCASE, ${byTitle}`,
 };
 
-export function listBooks(db, { sort = 'title' } = {}) {
+// Only what a card renders. `description` alone was 201 KB of a 584 KB
+// response across a real 643-book library, for a field the grid never shows.
+const GRID_COLUMNS = `
+  b.isbn, b.title, b.author, b.cover_url, b.genre, b.topics,
+  b.age_min, b.age_max, b.added_at, b.edited_at, b.enriched_at,
+  b.series_id, b.series_position
+`;
+
+export function listBooks(db, { sort = 'title', columns = GRID_COLUMNS } = {}) {
   const order = SORTS[sort] ?? SORTS.title;
   return db.prepare(
-    `SELECT b.*, s.name AS series_name, s.total_known, s.must_read_in_order
+    `SELECT ${columns}, s.name AS series_name, s.total_known, s.must_read_in_order
        FROM books b LEFT JOIN series s ON s.id = b.series_id
       WHERE b.removed_at IS NULL
        ${order}`,
