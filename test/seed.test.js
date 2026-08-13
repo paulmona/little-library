@@ -6,7 +6,7 @@ const proposal = JSON.parse(
   readFileSync(new URL('../src/seed/series-proposal.json', import.meta.url), 'utf8'),
 );
 
-const allGroups = [...proposal.continuingStories, ...proposal.standaloneSets];
+const allGroups = proposal.continuingStories;
 const allBooks = allGroups.flatMap((g) => g.books.map((b) => ({ ...b, series: g.name })));
 
 // The proposal is hand-authored, so these guard the authoring rather than the code.
@@ -66,11 +66,17 @@ test('every duplicateOf points at a book in the same series', () => {
   }
 });
 
-test('continuing stories are the small, careful tier', () => {
-  // The whole point of the two tiers: only a genuine story arc warns about
-  // gifting. If this list ever balloons, the warning stops meaning anything.
-  assert.ok(proposal.continuingStories.length < 25,
-    'continuing stories should stay a short, deliberate list');
+test('every series is a continuing story, never an episodic set', () => {
+  // Only continuing stories belong here. Episodic sets - Baby-Sitters Club,
+  // Cam Jansen, My Weird School - were deliberately dropped rather than
+  // grouped: they answer no question Karen has, and they would dilute the
+  // gifting warning until it meant nothing.
+  const episodic = ['Baby-Sitters', 'Cam Jansen', 'My Weird School', 'Nate the Great', 'Bailey School'];
+  for (const name of proposal.continuingStories.map((g) => g.name)) {
+    assert.ok(!episodic.some((e) => name.includes(e)), `${name} is episodic and should not be here`);
+  }
+  assert.ok(proposal.continuingStories.length < 40,
+    'continuing stories should stay a deliberate list, not a catch-all');
 });
 
 test('long open-ended series carry no total', () => {

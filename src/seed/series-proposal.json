@@ -1,39 +1,56 @@
 {
   "_comment": [
-    "A one-time proposal for seeding series onto an existing library, authored by",
-    "hand rather than resolved from an API — see VIE-52 for why automation was",
-    "cancelled. This file describes Paul and Karen's library specifically; it is",
-    "data, not code, and it is here so the seeding is reviewable and repeatable.",
+    "A one-time, hand-authored proposal for seeding series onto an existing library.",
+    "See VIE-52 for why automated resolution was cancelled.",
     "",
-    "TWO TIERS, and the distinction is the whole point:",
-    "  readInOrder: true  — one story across several books. Giving a child book 4",
-    "                       of these is useless. This is what Karen asked for.",
-    "  readInOrder: false — numbered but self-contained. Baby-Sitters Club #43",
-    "                       reads fine without #42. Grouping is still useful for",
-    "                       completing a set, but it must never warn about gifting.",
+    "ONE TIER ONLY, by design. A series here means a story that spans several",
+    "books, so that reading them out of order spoils or confuses. That is the only",
+    "kind Karen asked about: she does not want to gift book 4 of something.",
     "",
-    "totalKnown is left null wherever the series is open-ended or very long.",
-    "A wrong total invents missing books that Karen would go shopping for."
+    "Episodic sets were deliberately dropped rather than grouped. Baby-Sitters Club,",
+    "Nate the Great, Cam Jansen, My Weird School and the like are numbered but",
+    "self-contained; grouping them adds clutter and answers no question she has.",
+    "",
+    "totalKnown is null wherever a series is open-ended or very long. A wrong total",
+    "invents missing books that Karen would go shopping for."
   ],
-
   "continuingStories": [
     {
       "name": "Harry Potter",
       "totalKnown": 7,
-      "note": "Owns 2 and 4, no book 1 — exactly the gifting trap.",
+      "note": "Owns 2 and 4, no book 1 \u2014 exactly the gifting trap.",
       "books": [
-        { "isbn": "9781781100226", "position": 2 },
-        { "isbn": "9781551925158", "position": 4 }
+        {
+          "isbn": "9781781100226",
+          "position": 2
+        },
+        {
+          "isbn": "9781551925158",
+          "position": 4
+        }
       ]
     },
     {
       "name": "A Series of Unfortunate Events",
       "totalKnown": 13,
       "books": [
-        { "isbn": "9780749748814", "position": 1 },
-        { "isbn": "9780064407687", "position": 3 },
-        { "isbn": "9780061757150", "position": 3, "duplicateOf": "9780064407687" },
-        { "isbn": "9780061757181", "position": 6 }
+        {
+          "isbn": "9780749748814",
+          "position": 1
+        },
+        {
+          "isbn": "9780064407687",
+          "position": 3
+        },
+        {
+          "isbn": "9780061757150",
+          "position": 3,
+          "duplicateOf": "9780064407687"
+        },
+        {
+          "isbn": "9780061757181",
+          "position": 6
+        }
       ]
     },
     {
@@ -41,15 +58,42 @@
       "totalKnown": 12,
       "note": "Nine of twelve. Missing 1, 5 and 8.",
       "books": [
-        { "isbn": "9780439974851", "position": 2 },
-        { "isbn": "9780439974080", "position": 3 },
-        { "isbn": "9780439974097", "position": 4 },
-        { "isbn": "9781554680689", "position": 6 },
-        { "isbn": "9781554680610", "position": 7 },
-        { "isbn": "9781554680641", "position": 9 },
-        { "isbn": "9781554680658", "position": 10 },
-        { "isbn": "9781554680672", "position": 11 },
-        { "isbn": "9781554680580", "position": 12 }
+        {
+          "isbn": "9780439974851",
+          "position": 2
+        },
+        {
+          "isbn": "9780439974080",
+          "position": 3
+        },
+        {
+          "isbn": "9780439974097",
+          "position": 4
+        },
+        {
+          "isbn": "9781554680689",
+          "position": 6
+        },
+        {
+          "isbn": "9781554680610",
+          "position": 7
+        },
+        {
+          "isbn": "9781554680641",
+          "position": 9
+        },
+        {
+          "isbn": "9781554680658",
+          "position": 10
+        },
+        {
+          "isbn": "9781554680672",
+          "position": 11
+        },
+        {
+          "isbn": "9781554680580",
+          "position": 12
+        }
       ]
     },
     {
@@ -57,12 +101,30 @@
       "totalKnown": 8,
       "note": "The Shadowlands omnibus is a different sub-series and is left out.",
       "books": [
-        { "isbn": "9780545529532", "position": 1 },
-        { "isbn": "9780439253246", "position": 2 },
-        { "isbn": "9780439253253", "position": 3 },
-        { "isbn": "9780439253260", "position": 4 },
-        { "isbn": "9780439253277", "position": 5 },
-        { "isbn": "9780545529648", "position": 8 }
+        {
+          "isbn": "9780545529532",
+          "position": 1
+        },
+        {
+          "isbn": "9780439253246",
+          "position": 2
+        },
+        {
+          "isbn": "9780439253253",
+          "position": 3
+        },
+        {
+          "isbn": "9780439253260",
+          "position": 4
+        },
+        {
+          "isbn": "9780439253277",
+          "position": 5
+        },
+        {
+          "isbn": "9780545529648",
+          "position": 8
+        }
       ]
     },
     {
@@ -70,16 +132,28 @@
       "totalKnown": 5,
       "note": "Demigod Files and Camp Half-Blood Confidential are companions, not numbered entries.",
       "books": [
-        { "isbn": "9780545057042", "position": 3 },
-        { "isbn": "9780545200493", "position": 4 }
+        {
+          "isbn": "9780545057042",
+          "position": 3
+        },
+        {
+          "isbn": "9780545200493",
+          "position": 4
+        }
       ]
     },
     {
       "name": "The Kane Chronicles",
       "totalKnown": 3,
       "books": [
-        { "isbn": "9781423140566", "position": 2 },
-        { "isbn": "9781368013574", "position": 3 }
+        {
+          "isbn": "9781423140566",
+          "position": 2
+        },
+        {
+          "isbn": "9781368013574",
+          "position": 3
+        }
       ]
     },
     {
@@ -87,16 +161,28 @@
       "totalKnown": 3,
       "note": "Four: A Divergent Collection is a companion, left out.",
       "books": [
-        { "isbn": "9780062024039", "position": 1 },
-        { "isbn": "9780062024077", "position": 3 }
+        {
+          "isbn": "9780062024039",
+          "position": 1
+        },
+        {
+          "isbn": "9780062024077",
+          "position": 3
+        }
       ]
     },
     {
       "name": "His Dark Materials",
       "totalKnown": 3,
       "books": [
-        { "isbn": "9780440418320", "position": 1 },
-        { "isbn": "9780702301681", "position": 2 }
+        {
+          "isbn": "9780440418320",
+          "position": 1
+        },
+        {
+          "isbn": "9780702301681",
+          "position": 2
+        }
       ]
     },
     {
@@ -104,24 +190,42 @@
       "totalKnown": 4,
       "note": "Owns 3 and 4 only.",
       "books": [
-        { "isbn": "9780316160209", "position": 3 },
-        { "isbn": "9780316067928", "position": 4 }
+        {
+          "isbn": "9780316160209",
+          "position": 3
+        },
+        {
+          "isbn": "9780316067928",
+          "position": 4
+        }
       ]
     },
     {
       "name": "The Infernal Devices",
       "totalKnown": 3,
       "books": [
-        { "isbn": "9781481456029", "position": 1 },
-        { "isbn": "9781481456036", "position": 3 }
+        {
+          "isbn": "9781481456029",
+          "position": 1
+        },
+        {
+          "isbn": "9781481456036",
+          "position": 3
+        }
       ]
     },
     {
       "name": "TombQuest",
       "totalKnown": 5,
       "books": [
-        { "isbn": "9780545723459", "position": 1 },
-        { "isbn": "9780545723398", "position": 2 }
+        {
+          "isbn": "9780545723459",
+          "position": 1
+        },
+        {
+          "isbn": "9780545723398",
+          "position": 2
+        }
       ]
     },
     {
@@ -129,8 +233,14 @@
       "totalKnown": 8,
       "note": "Published as the Charlie Bone books.",
       "books": [
-        { "isbn": "9781405225441", "position": 2 },
-        { "isbn": "9781405224659", "position": 4 }
+        {
+          "isbn": "9781405225441",
+          "position": 2
+        },
+        {
+          "isbn": "9781405224659",
+          "position": 4
+        }
       ]
     },
     {
@@ -138,458 +248,290 @@
       "totalKnown": 5,
       "note": "Five copies of two books. Hatchet is #1, Brian's Winter is #3.",
       "books": [
-        { "isbn": "9780545462204", "position": 1 },
-        { "isbn": "9781416936473", "position": 1, "duplicateOf": "9780545462204" },
-        { "isbn": "9780307929587", "position": 3 },
-        { "isbn": "9780385729963", "position": 3, "duplicateOf": "9780307929587" },
-        { "isbn": "9780439650311", "position": 3, "duplicateOf": "9780307929587" }
+        {
+          "isbn": "9780545462204",
+          "position": 1
+        },
+        {
+          "isbn": "9781416936473",
+          "position": 1,
+          "duplicateOf": "9780545462204"
+        },
+        {
+          "isbn": "9780307929587",
+          "position": 3
+        },
+        {
+          "isbn": "9780385729963",
+          "position": 3,
+          "duplicateOf": "9780307929587"
+        },
+        {
+          "isbn": "9780439650311",
+          "position": 3,
+          "duplicateOf": "9780307929587"
+        }
       ]
     },
     {
       "name": "Julie of the Wolves",
       "totalKnown": 3,
       "books": [
-        { "isbn": "9780062429742", "position": 1 },
-        { "isbn": "9780062884329", "position": 3 }
+        {
+          "isbn": "9780062429742",
+          "position": 1
+        },
+        {
+          "isbn": "9780062884329",
+          "position": 3
+        }
       ]
     },
     {
       "name": "Animorphs",
       "totalKnown": null,
-      "note": "54 books. Deliberately no total — a missing list of 51 numbers helps nobody. Megamorphs is a separate sub-series and is left out.",
+      "note": "54 books. Deliberately no total \u2014 a missing list of 51 numbers helps nobody. Megamorphs is a separate sub-series and is left out.",
       "books": [
-        { "isbn": "9780590997263", "position": 7 },
-        { "isbn": "9781338216868", "position": 23 },
-        { "isbn": "9781338217674", "position": 37 }
+        {
+          "isbn": "9780590997263",
+          "position": 7
+        },
+        {
+          "isbn": "9781338216868",
+          "position": 23
+        },
+        {
+          "isbn": "9781338217674",
+          "position": 37
+        }
       ]
     },
     {
       "name": "Artemis Fowl",
       "totalKnown": 8,
-      "books": [{ "isbn": "9780786817078", "position": 1 }]
+      "books": [
+        {
+          "isbn": "9780786817078",
+          "position": 1
+        }
+      ]
     },
     {
       "name": "Inkworld",
       "totalKnown": 3,
       "note": "Inkheart is the first.",
-      "books": [{ "isbn": "9780439709101", "position": 1 }]
+      "books": [
+        {
+          "isbn": "9780439709101",
+          "position": 1
+        }
+      ]
     },
     {
       "name": "Michael Vey",
       "totalKnown": 7,
-      "note": "Owns only book 3 — no book 1.",
-      "books": [{ "isbn": "9781442475113", "position": 3 }]
+      "note": "Owns only book 3 \u2014 no book 1.",
+      "books": [
+        {
+          "isbn": "9781442475113",
+          "position": 3
+        }
+      ]
     },
     {
       "name": "The 39 Clues",
       "totalKnown": 11,
       "note": "The book titled just \"The 39 Clues\" is probably The Maze of Bones (#1), but the metadata does not say so. Left unplaced rather than guessed.",
       "books": [
-        { "isbn": "9780545060479", "position": null },
-        { "isbn": "9780545060431", "position": 3 }
-      ]
-    }
-  ],
-
-  "standaloneSets": [
-    {
-      "name": "The Baby-Sitters Club",
-      "books": [
-        { "isbn": "9781338642216", "position": 2 },
-        { "isbn": "9781338642247", "position": 5 },
-        { "isbn": "9781338642261", "position": 9 },
-        { "isbn": "9781338685015", "position": 15 },
-        { "isbn": "9781338814972", "position": 23 },
-        { "isbn": "9780545690362", "position": 43 },
-        { "isbn": "9780545792912", "position": 103 }
-      ]
-    },
-    {
-      "name": "The Baby-Sitters Club Mysteries",
-      "books": [
-        { "isbn": "9780545690591", "position": 2 },
-        { "isbn": "9780545690683", "position": 7 },
-        { "isbn": "9780545791977", "position": 19 }
-      ]
-    },
-    {
-      "name": "Baby-Sitters Little Sister",
-      "books": [
-        { "isbn": "9781338056501", "position": 38 },
-        { "isbn": "9781338057003", "position": 45 },
-        { "isbn": "9781338057799", "position": 61 },
-        { "isbn": "9781338059472", "position": 77 },
-        { "isbn": "9781338060546", "position": 98 },
-        { "isbn": "9780590636414", "position": null },
-        { "isbn": "9780590500517", "position": null },
-        { "isbn": "9780590259972", "position": null },
-        { "isbn": "9780590500586", "position": null },
-        { "isbn": "9780590065870", "position": null }
-      ]
-    },
-    {
-      "name": "The Kids in Ms. Colman's Class",
-      "books": [{ "isbn": "9781338092486", "position": 1 }]
-    },
-    {
-      "name": "Diary of a Wimpy Kid",
-      "books": [
-        { "isbn": "9780810988934", "position": 1 },
-        { "isbn": "9781419705847", "position": 1, "duplicateOf": "9780810988934" },
-        { "isbn": "9780810994737", "position": 2 },
-        { "isbn": "9781419741876", "position": 3 },
-        { "isbn": "9780810983915", "position": 4 },
-        { "isbn": "9780810997936", "position": 5 },
-        { "isbn": "9781419702235", "position": 6 },
-        { "isbn": "9781419741944", "position": 8 },
-        { "isbn": "9781419724862", "position": 11 },
-        { "isbn": "9781419727436", "position": 13 },
-        { "isbn": "9781419739033", "position": 14 },
-        { "isbn": "9781419748684", "position": 15 },
-        { "isbn": "9781419766527", "position": 17 }
-      ]
-    },
-    {
-      "name": "The Adventures of the Bailey School Kids",
-      "books": [
-        { "isbn": "9781338829136", "position": 1 },
-        { "isbn": "9781338829143", "position": 2 },
-        { "isbn": "9781338829150", "position": 3 },
-        { "isbn": "9781338829174", "position": 5 },
-        { "isbn": "9781338829198", "position": 7 },
-        { "isbn": "9781338829228", "position": 10 },
-        { "isbn": "9780590849029", "position": null },
-        { "isbn": "9780439559997", "position": null },
-        { "isbn": "9780590637114", "position": null },
-        { "isbn": "9780590481137", "position": null }
+        {
+          "isbn": "9780545060479",
+          "position": null
+        },
+        {
+          "isbn": "9780545060431",
+          "position": 3
+        }
       ]
     },
     {
       "name": "Captain Underpants",
       "books": [
-        { "isbn": "9780545499088", "position": 1 },
-        { "isbn": "9780545599320", "position": 2 },
-        { "isbn": "9781338864304", "position": 2, "duplicateOf": "9780545599320" },
-        { "isbn": "9781338864335", "position": 5 },
-        { "isbn": "9780439376129", "position": 7 },
-        { "isbn": "9781338271515", "position": 8 },
-        { "isbn": "9781338129953", "position": 12 }
-      ]
+        {
+          "isbn": "9780545499088",
+          "position": 1
+        },
+        {
+          "isbn": "9780545599320",
+          "position": 2
+        },
+        {
+          "isbn": "9781338864304",
+          "position": 2,
+          "duplicateOf": "9780545599320"
+        },
+        {
+          "isbn": "9781338864335",
+          "position": 5
+        },
+        {
+          "isbn": "9780439376129",
+          "position": 7
+        },
+        {
+          "isbn": "9781338271515",
+          "position": 8
+        },
+        {
+          "isbn": "9781338129953",
+          "position": 12
+        }
+      ],
+      "totalKnown": 12,
+      "note": "Books end on cliffhangers picked up by the next."
     },
     {
       "name": "Dog Man",
       "books": [
-        { "isbn": "9780545581608", "position": 1 },
-        { "isbn": "9780545935180", "position": null }
-      ]
+        {
+          "isbn": "9780545581608",
+          "position": 1
+        },
+        {
+          "isbn": "9780545935180",
+          "position": null
+        }
+      ],
+      "totalKnown": null,
+      "note": "Continuing arc."
     },
     {
       "name": "Cat Kid Comic Club",
-      "books": [{ "isbn": "9781338784855", "position": 2 }]
-    },
-    {
-      "name": "Junie B. Jones",
-      "note": "Four books came back titled only \"Junie B., First Grader\" — that is the metadata being unhelpful, not four copies of one book. Left unplaced.",
       "books": [
-        { "isbn": "9780679826422", "position": 1 },
-        { "isbn": "9780375800382", "position": 13 },
-        { "isbn": "9780375802911", "position": 16 },
-        { "isbn": "9780375815164", "position": 18 },
-        { "isbn": "9780375828058", "position": 23 },
-        { "isbn": "9780679851011", "position": null },
-        { "isbn": "9780375838095", "position": null },
-        { "isbn": "9780545037907", "position": null },
-        { "isbn": "9780375828072", "position": null },
-        { "isbn": "9780375802942", "position": null }
-      ]
+        {
+          "isbn": "9781338784855",
+          "position": 2
+        }
+      ],
+      "totalKnown": null,
+      "note": "Continuing arc; a Dog Man spin-off."
     },
     {
       "name": "The Bad Guys",
       "books": [
-        { "isbn": "9780545912402", "position": 1 },
-        { "isbn": "9780545912419", "position": 2 },
-        { "isbn": "9781338087499", "position": 3 },
-        { "isbn": "9781338087536", "position": 4 },
-        { "isbn": "9781338189612", "position": 7 },
-        { "isbn": "9781338189636", "position": 8 },
-        { "isbn": "9781338294675", "position": 8, "duplicateOf": "9781338189636" },
-        { "isbn": "9781338294651", "position": 6 },
-        { "isbn": "9781338329506", "position": null }
-      ]
-    },
-    {
-      "name": "Cam Jansen",
-      "books": [
-        { "isbn": "9780142400128", "position": 3 },
-        { "isbn": "9780142400142", "position": 5 },
-        { "isbn": "9781101075975", "position": 9 },
-        { "isbn": "9781101076118", "position": 14 },
-        { "isbn": "9780142403266", "position": null },
-        { "isbn": "9780590634960", "position": null }
-      ]
-    },
-    {
-      "name": "My Weird School",
-      "books": [
-        { "isbn": "9780060745189", "position": 5 },
-        { "isbn": "9780061973468", "position": 6 },
-        { "isbn": "9780060822255", "position": 9 },
-        { "isbn": "9780061141515", "position": 15 },
-        { "isbn": "9780439742115", "position": null },
-        { "isbn": "9780061234736", "position": null }
-      ]
-    },
-    {
-      "name": "Jigsaw Jones",
-      "books": [
-        { "isbn": "9780439285902", "position": 11 },
-        { "isbn": "9781250110190", "position": null },
-        { "isbn": "9781250110817", "position": null },
-        { "isbn": "9781250207630", "position": null },
-        { "isbn": "9780439184748", "position": null },
-        { "isbn": "9780613323765", "position": null },
-        { "isbn": "9780613169073", "position": null }
-      ]
-    },
-    {
-      "name": "The Secrets of Droon",
-      "books": [
-        { "isbn": "9780545833400", "position": 3 },
-        { "isbn": "9780545418249", "position": 11 },
-        { "isbn": "9780545418362", "position": 23 }
-      ]
-    },
-    {
-      "name": "Horrible Harry",
-      "books": [
-        { "isbn": "9781101076897", "position": null },
-        { "isbn": "9780590290142", "position": null },
-        { "isbn": "9781101076804", "position": null },
-        { "isbn": "9781101076866", "position": null }
-      ]
-    },
-    {
-      "name": "A to Z Mysteries",
-      "books": [
-        { "isbn": "9780439680899", "position": null },
-        { "isbn": "9780307535641", "position": null },
-        { "isbn": "9780307538956", "position": null },
-        { "isbn": "9780439785525", "position": null },
-        { "isbn": "9780679884491", "position": null }
-      ]
-    },
-    {
-      "name": "Magic Tree House",
-      "books": [
-        { "isbn": "9780679824244", "position": 3 },
-        { "isbn": "9780375830341", "position": 33 },
-        { "isbn": "9780545202145", "position": 39 },
-        { "isbn": "9780375873959", "position": null },
-        { "isbn": "9780375813580", "position": null }
-      ]
+        {
+          "isbn": "9780545912402",
+          "position": 1
+        },
+        {
+          "isbn": "9780545912419",
+          "position": 2
+        },
+        {
+          "isbn": "9781338087499",
+          "position": 3
+        },
+        {
+          "isbn": "9781338087536",
+          "position": 4
+        },
+        {
+          "isbn": "9781338189612",
+          "position": 7
+        },
+        {
+          "isbn": "9781338189636",
+          "position": 8
+        },
+        {
+          "isbn": "9781338294675",
+          "position": 8,
+          "duplicateOf": "9781338189636"
+        },
+        {
+          "isbn": "9781338294651",
+          "position": 6
+        },
+        {
+          "isbn": "9781338329506",
+          "position": null
+        }
+      ],
+      "totalKnown": null,
+      "note": "Continuing arc with cliffhangers between books."
     },
     {
       "name": "My Sister the Vampire",
       "books": [
-        { "isbn": "9780545097888", "position": 1 },
-        { "isbn": "9780545289979", "position": 2 },
-        { "isbn": "9780545170437", "position": 4 },
-        { "isbn": "9780545289986", "position": null }
-      ]
+        {
+          "isbn": "9780545097888",
+          "position": 1
+        },
+        {
+          "isbn": "9780545289979",
+          "position": 2
+        },
+        {
+          "isbn": "9780545170437",
+          "position": 4
+        },
+        {
+          "isbn": "9780545289986",
+          "position": null
+        }
+      ],
+      "totalKnown": null,
+      "note": "Continuing story across the books."
     },
     {
       "name": "Ramona",
       "books": [
-        { "isbn": "9780439148023", "position": 1 },
-        { "isbn": "9780380709182", "position": 1, "duplicateOf": "9780439148023" },
-        { "isbn": "9780061972362", "position": 2 },
-        { "isbn": "9780380709595", "position": 3 },
-        { "isbn": "9780380709168", "position": 4 },
-        { "isbn": "9780380709564", "position": 6 },
-        { "isbn": "9780439148030", "position": 8 }
-      ]
-    },
-    {
-      "name": "Geronimo Stilton",
-      "books": [
-        { "isbn": "9780439559638", "position": 1 },
-        { "isbn": "9780545391856", "position": 11 },
-        { "isbn": "9780439559737", "position": 11, "duplicateOf": "9780545391856" },
-        { "isbn": "9780545556316", "position": null },
-        { "isbn": "9780439559652", "position": null },
-        { "isbn": "9780439559645", "position": null },
-        { "isbn": "9780545021326", "position": null }
-      ]
-    },
-    {
-      "name": "Wayside School",
-      "books": [
-        { "isbn": "9780380698714", "position": 1 },
-        { "isbn": "9780380754847", "position": 2 }
-      ]
-    },
-    {
-      "name": "Goosebumps",
-      "books": [
-        { "isbn": "9780590554428", "position": 4 },
-        { "isbn": "9780439796316", "position": 4, "duplicateOf": "9780590554428" },
-        { "isbn": "9780545035231", "position": 5 },
-        { "isbn": "9780545820394", "position": 6 },
-        { "isbn": "9780590628365", "position": null }
-      ]
-    },
-    {
-      "name": "Goosebumps HorrorLand",
-      "books": [
-        { "isbn": "9780385746632", "position": null },
-        { "isbn": "9780385746656", "position": null },
-        { "isbn": "9780385746946", "position": null }
-      ]
-    },
-    {
-      "name": "The Screech Owls",
-      "books": [
-        { "isbn": "9780771056222", "position": null },
-        { "isbn": "9780771056444", "position": null }
-      ]
-    },
-    {
-      "name": "Clementine",
-      "books": [
-        { "isbn": "9780545034661", "position": 1 },
-        { "isbn": "9780545077385", "position": 2 }
-      ]
-    },
-    {
-      "name": "The Fix-It Friends",
-      "books": [
-        { "isbn": "9781250086709", "position": null },
-        { "isbn": "9781250086723", "position": null }
-      ]
-    },
-    {
-      "name": "Justine McKeen",
-      "books": [
-        { "isbn": "9781554699315", "position": null },
-        { "isbn": "9781554699292", "position": null }
-      ]
-    },
-    {
-      "name": "The English Roses",
-      "books": [
-        { "isbn": "9780142408834", "position": 1 },
-        { "isbn": "9780142410936", "position": null },
-        { "isbn": "9780142411292", "position": null },
-        { "isbn": "9780142411261", "position": null },
-        { "isbn": "9780142411278", "position": null }
-      ]
-    },
-    {
-      "name": "Disney Descendants: School of Secrets",
-      "books": [
-        { "isbn": "9781368013987", "position": null },
-        { "isbn": "9781484778654", "position": null },
-        { "isbn": "9781484778678", "position": null }
-      ]
-    },
-    {
-      "name": "Redwall",
-      "note": "Chronological but each stands alone, so not flagged read-in-order.",
-      "books": [
-        { "isbn": "9780099675402", "position": null },
-        { "isbn": "9780099638810", "position": null },
-        { "isbn": "9780099264361", "position": null }
-      ]
+        {
+          "isbn": "9780439148023",
+          "position": 1
+        },
+        {
+          "isbn": "9780380709182",
+          "position": 1,
+          "duplicateOf": "9780439148023"
+        },
+        {
+          "isbn": "9780061972362",
+          "position": 2
+        },
+        {
+          "isbn": "9780380709595",
+          "position": 3
+        },
+        {
+          "isbn": "9780380709168",
+          "position": 4
+        },
+        {
+          "isbn": "9780380709564",
+          "position": 6
+        },
+        {
+          "isbn": "9780439148030",
+          "position": 8
+        }
+      ],
+      "totalKnown": 8,
+      "note": "Ramona ages book to book; reading backwards is odd."
     },
     {
       "name": "The Chronicles of Narnia",
-      "note": "Commonly read in order, but each is a self-contained adventure. Karen can flip the read-in-order switch if she disagrees.",
+      "note": "Chronological across the world's history.",
       "books": [
-        { "isbn": "9780007588510", "position": 1 },
-        { "isbn": "9780064471077", "position": 5 }
-      ]
-    },
-    {
-      "name": "Poison Apple",
-      "books": [
-        { "isbn": "9780545388511", "position": 6 },
-        { "isbn": "9780545333252", "position": 6, "duplicateOf": "9780545388511" },
-        { "isbn": "9780545203180", "position": null }
-      ]
-    },
-    {
-      "name": "Help! I'm Trapped",
-      "books": [
-        { "isbn": "9781973363453", "position": null },
-        { "isbn": "9780613116206", "position": null }
-      ]
-    },
-    {
-      "name": "The Littles",
-      "books": [
-        { "isbn": "9780590421294", "position": null },
-        { "isbn": "9780590462235", "position": null }
-      ]
-    },
-    {
-      "name": "Franny K. Stein",
-      "books": [
-        { "isbn": "9780439692519", "position": 1 },
-        { "isbn": "9780545116121", "position": null }
-      ]
-    },
-    {
-      "name": "Animal Ark",
-      "books": [
-        { "isbn": "9780439230179", "position": null },
-        { "isbn": "9780439230186", "position": null },
-        { "isbn": "9780439319522", "position": null },
-        { "isbn": "9780439419154", "position": null }
-      ]
-    },
-    {
-      "name": "The Amazing Days of Abby Hayes",
-      "books": [
-        { "isbn": "9780329258023", "position": 1 },
-        { "isbn": "9780439178761", "position": null },
-        { "isbn": "9780439178815", "position": null },
-        { "isbn": "9780613430456", "position": null }
-      ]
-    },
-    {
-      "name": "Rainbow Magic",
-      "books": [
-        { "isbn": "9780439796149", "position": null },
-        { "isbn": "9780545316606", "position": null }
-      ]
-    },
-    {
-      "name": "Scooby-Doo",
-      "books": [
-        { "isbn": "9781782021551", "position": null },
-        { "isbn": "9780439080958", "position": null }
-      ]
-    },
-    {
-      "name": "The Boxcar Children",
-      "books": [
-        { "isbn": "9780807508527", "position": 1 },
-        { "isbn": "9780807593660", "position": 3 }
-      ]
-    },
-    {
-      "name": "Pony Pals",
-      "books": [
-        { "isbn": "9780439165730", "position": null },
-        { "isbn": "9781741690514", "position": null }
-      ]
-    },
-    {
-      "name": "Puppy Patrol",
-      "books": [
-        { "isbn": "9780439791229", "position": null },
-        { "isbn": "9780439322645", "position": null }
-      ]
+        {
+          "isbn": "9780007588510",
+          "position": 1
+        },
+        {
+          "isbn": "9780064471077",
+          "position": 5
+        }
+      ],
+      "totalKnown": 7
     }
   ]
 }
