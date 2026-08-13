@@ -10,6 +10,7 @@ import {
 } from './db/books.js';
 import { getSeriesEntries } from './db/series.js';
 import { loadSampleLibrary } from './sample/load.js';
+import { syncFromSheet } from './sheet/ingest.js';
 
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), 'public');
 
@@ -101,6 +102,18 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     for (const [name, available] of Object.entries(describeCapabilities(config))) {
       if (!available) console.warn(`[little-library] ${name} unavailable — missing configuration`);
     }
+  }
+
+  // Pull new scans in periodically so a book scanned on the phone appears
+  // without anyone doing anything. Failures are logged, never fatal.
+  if (!demo && config.sheet.gatewayUrl) {
+    const sync = async () => {
+      const result = await syncFromSheet(db, config.sheet);
+      if (!result.ok) console.warn(`[little-library] sheet sync failed: ${result.error}`);
+      else if (result.added > 0) console.log(`[little-library] sheet sync: ${result.added} new`);
+    };
+    sync();
+    setInterval(sync, 15 * 60 * 1000).unref();
   }
 
   buildServer(config, db)
