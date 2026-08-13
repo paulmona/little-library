@@ -13,6 +13,7 @@
     "demo": "node src/server.js --demo",
     "import": "node src/import/cli.js",
     "enrich": "node src/enrich/cli.js",
+    "seed-series": "node src/seed/apply-series.js",
     "test": "node --test"
   },
   "dependencies": {
