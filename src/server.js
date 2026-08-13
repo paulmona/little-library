@@ -5,7 +5,9 @@ import { dirname, join } from 'node:path';
 
 import { loadConfig, describeCapabilities } from './config.js';
 import { openDatabase } from './db/index.js';
-import { listBooks, getBook, getStats } from './db/books.js';
+import {
+  listBooks, getBook, getStats, applyEdit, removeBook, restoreBook, ENRICHABLE_FIELDS,
+} from './db/books.js';
 import { getSeriesEntries } from './db/series.js';
 import { loadSampleLibrary } from './sample/load.js';
 
@@ -54,6 +56,34 @@ export function buildServer(config, db) {
       : null;
 
     return { ...book, series };
+  });
+
+  app.patch('/api/books/:isbn', async (request, reply) => {
+    const { isbn } = request.params;
+    if (!getBook(db, isbn)) return reply.code(404).send({ error: 'No such book' });
+
+    const changed = applyEdit(db, isbn, request.body ?? {});
+    if (changed.length === 0) {
+      return reply.code(400).send({ error: 'No editable fields supplied', editable: ENRICHABLE_FIELDS });
+    }
+
+    return { changed, book: getBook(db, isbn) };
+  });
+
+  // Tombstone rather than DELETE. The ISBN stays in the Google Sheet after a
+  // book leaves the shelf, so a hard delete would be undone by the next import.
+  app.delete('/api/books/:isbn', async (request, reply) => {
+    if (!removeBook(db, request.params.isbn)) {
+      return reply.code(404).send({ error: 'No such book' });
+    }
+    return { removed: request.params.isbn };
+  });
+
+  app.post('/api/books/:isbn/restore', async (request, reply) => {
+    if (!restoreBook(db, request.params.isbn)) {
+      return reply.code(404).send({ error: 'Not removed' });
+    }
+    return { restored: request.params.isbn, book: getBook(db, request.params.isbn) };
   });
 
   return app;

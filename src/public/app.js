@@ -144,6 +144,10 @@ function detailMarkup(book) {
         <dl class="facts">
           ${facts.map(([label, value]) => `<dt>${text(label)}</dt><dd>${text(value)}</dd>`).join('')}
         </dl>
+        <div class="detail-actions">
+          <button class="btn" data-action="edit">&#9998; Edit</button>
+          <button class="btn btn-quiet" data-action="remove">Remove from library</button>
+        </div>
       </div>
     </div>
     ${seriesMarkup(book.series, book.isbn)}`;
@@ -161,6 +165,7 @@ async function showDetail(isbn) {
   }
 
   const book = await res.json();
+  currentBook = book;
   detailView.innerHTML = detailMarkup(book);
   document.title = book.title ?? 'Little Library';
   window.scrollTo(0, 0);
@@ -174,6 +179,121 @@ function showGrid() {
   const saved = Number(sessionStorage.getItem(SCROLL_KEY) ?? 0);
   window.scrollTo(0, saved);
 }
+
+
+// --------------------------------------------------------------- edit / remove
+
+let currentBook = null;
+
+const EDITABLE = [
+  ['title', 'Title', 'text'],
+  ['author', 'Author', 'text'],
+  ['genre', 'Genre', 'text'],
+  ['age_min', 'Youngest age', 'number'],
+  ['age_max', 'Oldest age', 'number'],
+  ['year', 'Year published', 'number'],
+  ['page_count', 'Pages', 'number'],
+];
+
+function editMarkup(book) {
+  const fields = EDITABLE.map(([name, label, type]) => `
+    <label class="field">
+      <span>${text(label)}</span>
+      <input name="${name}" type="${type}" value="${text(book[name] ?? '')}">
+    </label>`).join('');
+
+  return `
+    <a class="back" href="/">&larr; All books</a>
+    <form class="edit-form" id="edit-form">
+      <h1>Edit</h1>
+      <p class="edit-note">Anything you change here is kept. Automatic updates will not overwrite it.</p>
+      ${fields}
+      <label class="field">
+        <span>Topics</span>
+        <input name="topics" type="text" value="${text((book.topics ?? []).join(', '))}">
+        <small>Separated by commas</small>
+      </label>
+      <label class="field">
+        <span>Description</span>
+        <textarea name="description" rows="6">${text(book.description ?? '')}</textarea>
+      </label>
+      <div class="detail-actions">
+        <button class="btn" type="submit">Save</button>
+        <button class="btn btn-quiet" type="button" data-action="cancel">Cancel</button>
+      </div>
+    </form>`;
+}
+
+function showEdit() {
+  detailView.innerHTML = editMarkup(currentBook);
+  window.scrollTo(0, 0);
+
+  document.getElementById('edit-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+
+    const payload = {};
+    for (const [name, , type] of EDITABLE) {
+      const raw = form.get(name).trim();
+      // An emptied field means "unset", not "zero" and not "empty string".
+      payload[name] = raw === '' ? null : (type === 'number' ? Number(raw) : raw);
+    }
+    payload.topics = form.get('topics').split(',').map((t) => t.trim()).filter(Boolean);
+    payload.description = form.get('description').trim() || null;
+
+    const res = await fetch(`/api/books/${encodeURIComponent(currentBook.isbn)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      alert('Could not save that change.');
+      return;
+    }
+
+    await showDetail(currentBook.isbn);
+    await refreshBooks();
+  });
+}
+
+async function removeCurrent() {
+  // One tap is too easy on a phone, so confirm - and still offer undo after.
+  if (!window.confirm(`Remove “${currentBook.title ?? currentBook.isbn}” from the library?`)) return;
+
+  const isbn = currentBook.isbn;
+  const res = await fetch(`/api/books/${encodeURIComponent(isbn)}`, { method: 'DELETE' });
+  if (!res.ok) {
+    alert('Could not remove that book.');
+    return;
+  }
+
+  await refreshBooks();
+  window.history.pushState({}, '', '/');
+  showGrid();
+  showUndo(isbn);
+}
+
+function showUndo(isbn) {
+  const bar = document.createElement('div');
+  bar.className = 'undo-bar';
+  bar.innerHTML = '<span>Book removed.</span> <button class="btn btn-quiet" type="button">Undo</button>';
+  bar.querySelector('button').addEventListener('click', async () => {
+    await fetch(`/api/books/${encodeURIComponent(isbn)}/restore`, { method: 'POST' });
+    await refreshBooks();
+    renderGrid();
+    bar.remove();
+  });
+  document.body.appendChild(bar);
+  setTimeout(() => bar.remove(), 10000);
+}
+
+detailView.addEventListener('click', (event) => {
+  const action = event.target.closest('[data-action]')?.dataset.action;
+  if (action === 'edit') showEdit();
+  if (action === 'cancel') showDetail(currentBook.isbn);
+  if (action === 'remove') removeCurrent();
+});
 
 // ------------------------------------------------------------------ routing
 
@@ -200,7 +320,7 @@ window.addEventListener('popstate', route);
 
 // -------------------------------------------------------------------- boot
 
-async function load() {
+async function refreshBooks() {
   const sort = sortSelect.value;
   localStorage.setItem(SORT_KEY, sort);
 
@@ -215,7 +335,10 @@ async function load() {
   document.getElementById('library-name').textContent = stats.library;
   document.getElementById('stat-books').textContent = stats.books;
   document.getElementById('stat-authors').textContent = stats.authors;
+}
 
+async function load() {
+  await refreshBooks();
   route();
 }
 

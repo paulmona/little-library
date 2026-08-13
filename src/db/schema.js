@@ -55,6 +55,17 @@ export const MIGRATIONS = [
   CREATE INDEX idx_books_added  ON books(added_at);
   CREATE INDEX idx_books_series ON books(series_id);
   `,
+
+  // 2 — tombstones, so a removed book stays removed
+  //
+  // Books leave a little free library constantly. A hard DELETE would be undone
+  // by the next Sheet import: the ISBN is still in the sheet, looks new, and
+  // comes back. Marking the row instead lets the importer skip it, and makes
+  // undo nearly free.
+  `
+  ALTER TABLE books ADD COLUMN removed_at TEXT;
+  CREATE INDEX idx_books_removed ON books(removed_at);
+  `,
 ];
 
 export function migrate(db) {

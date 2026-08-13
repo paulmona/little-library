@@ -157,3 +157,40 @@ a.logo { text-decoration: none; color: inherit; }
   .facts { grid-template-columns: 1fr; gap: 2px; }
   .facts dd { margin-bottom: 8px; }
 }
+
+/* --------------------------------------------------------- edit and remove */
+
+.detail-actions { display: flex; gap: 10px; margin-top: 1.75rem; flex-wrap: wrap; }
+.btn {
+  background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  padding: 9px 16px; font-size: 14px; font-family: var(--sans); cursor: pointer;
+}
+.btn:hover { background: #2f5540; }
+.btn-quiet { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-quiet:hover { background: var(--surface2); color: var(--text); }
+
+.edit-form { max-width: 640px; }
+.edit-form h1 { font-size: 24px; font-weight: normal; margin-bottom: 0.35rem; }
+.edit-note { font-family: var(--sans); font-size: 13px; color: var(--text3); margin-bottom: 1.5rem; }
+.field { display: block; margin-bottom: 1rem; }
+.field > span {
+  display: block; font-family: var(--sans); font-size: 11px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 5px;
+}
+.field input, .field textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); font-size: 14px; font-family: var(--sans);
+  color: var(--text); outline: none; resize: vertical;
+}
+.field input:focus, .field textarea:focus { border-color: var(--accent); }
+.field small { display: block; margin-top: 4px; font-family: var(--sans); font-size: 11px; color: var(--text3); }
+
+.undo-bar {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: var(--text); color: var(--bg); border-radius: 10px;
+  padding: 10px 14px; display: flex; align-items: center; gap: 12px;
+  font-family: var(--sans); font-size: 13px; z-index: 200;
+  box-shadow: 0 6px 24px rgba(20, 18, 14, .25);
+}
+.undo-bar .btn-quiet { color: var(--bg); border-color: rgba(250, 249, 247, .35); padding: 5px 12px; }
+.undo-bar .btn-quiet:hover { background: rgba(250, 249, 247, .12); color: var(--bg); }

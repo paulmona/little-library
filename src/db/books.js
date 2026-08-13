@@ -37,19 +37,45 @@ function decodeRow(row) {
   };
 }
 
-/** Insert a bare ISBN discovered by the scanner. Idempotent. */
+/**
+ * Insert a bare ISBN discovered by the scanner. Idempotent, and deliberately
+ * does NOT resurrect a removed book: the ISBN stays in the Google Sheet after
+ * Karen takes the book off the shelf, so every import would otherwise bring it
+ * back. INSERT OR IGNORE leaves the tombstoned row untouched.
+ */
 export function addBook(db, isbn, { addedAt = now() } = {}) {
   db.prepare('INSERT OR IGNORE INTO books (isbn, added_at) VALUES (?, ?)').run(isbn, addedAt);
   return getBook(db, isbn);
 }
 
-export function getBook(db, isbn) {
+/** @param includeRemoved only for undo and for tests asserting the tombstone */
+export function getBook(db, isbn, { includeRemoved = false } = {}) {
   const row = db.prepare(
     `SELECT b.*, s.name AS series_name, s.total_known, s.must_read_in_order
        FROM books b LEFT JOIN series s ON s.id = b.series_id
-      WHERE b.isbn = ?`,
+      WHERE b.isbn = ?${includeRemoved ? '' : ' AND b.removed_at IS NULL'}`,
   ).get(isbn);
   return decodeRow(row);
+}
+
+/**
+ * Take a book off the shelf. Kept as a tombstone rather than deleted so the
+ * next Sheet import doesn't bring it straight back, and so undo is trivial.
+ * The series entry is deliberately left alone — it flips to unowned, which is
+ * exactly what the missing-books view is for.
+ */
+export function removeBook(db, isbn) {
+  const result = db.prepare(
+    'UPDATE books SET removed_at = ? WHERE isbn = ? AND removed_at IS NULL',
+  ).run(now(), isbn);
+  return result.changes > 0;
+}
+
+export function restoreBook(db, isbn) {
+  const result = db.prepare(
+    'UPDATE books SET removed_at = NULL WHERE isbn = ? AND removed_at IS NOT NULL',
+  ).run(isbn);
+  return result.changes > 0;
 }
 
 /** Fields a human has pinned for this book. */
@@ -146,14 +172,15 @@ export function listBooks(db, { sort = 'title' } = {}) {
   return db.prepare(
     `SELECT b.*, s.name AS series_name, s.total_known, s.must_read_in_order
        FROM books b LEFT JOIN series s ON s.id = b.series_id
+      WHERE b.removed_at IS NULL
        ${order}`,
   ).all().map(decodeRow);
 }
 
 export function getStats(db) {
-  const { books } = db.prepare('SELECT COUNT(*) AS books FROM books').get();
+  const { books } = db.prepare('SELECT COUNT(*) AS books FROM books WHERE removed_at IS NULL').get();
   const { authors } = db.prepare(
-    "SELECT COUNT(DISTINCT author) AS authors FROM books WHERE author IS NOT NULL AND author != ''",
+    "SELECT COUNT(DISTINCT author) AS authors FROM books WHERE removed_at IS NULL AND author IS NOT NULL AND author != ''",
   ).get();
   return { books, authors };
 }
