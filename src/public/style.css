@@ -212,3 +212,24 @@ a.logo { text-decoration: none; color: inherit; }
 .pager button[aria-current="page"] { background: var(--accent); color: #fff; border-color: var(--accent); }
 .pager button:disabled { opacity: .4; cursor: default; }
 .pager .gap { color: var(--text3); padding: 0 2px; }
+
+/* --------------------------------------------------------- series builder */
+
+.checkbox-field { display: flex; align-items: center; gap: 8px; }
+.checkbox-field > span { font-family: var(--sans); font-size: 14px; color: var(--text); text-transform: none; letter-spacing: 0; }
+.checkbox-field input { width: auto; }
+
+.pick-list { list-style: none; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.pick {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  border-bottom: 1px solid var(--border); background: var(--surface);
+  font-family: var(--sans); font-size: 13px;
+}
+.pick:last-child { border-bottom: none; }
+.pick label { display: flex; align-items: center; gap: 9px; flex: 1; cursor: pointer; }
+.pick input[type="checkbox"] { width: auto; }
+.pick-title { flex: 1; }
+.pick-pos { width: 64px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; font-family: var(--sans); font-size: 13px; }
+
+.series-entry a { color: inherit; }
+.series-entry.missing em { color: var(--text3); font-size: 12px; }

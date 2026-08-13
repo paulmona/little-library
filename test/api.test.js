@@ -53,19 +53,18 @@ test('GET /api/stats reports counts and the library name', async () => {
   assert.equal(body.library, 'Test Library');
 });
 
-test('GET /api/books/:isbn includes the full ordered series', async () => {
+test('GET /api/books/:isbn reports series state by position', async () => {
   const body = (await app().inject({ url: '/api/books/9790000000302' })).json();
 
   assert.equal(body.title, 'The Copper Orrery');
   assert.equal(body.series.name, 'The Orrery Sequence');
-  assert.equal(body.series.mustReadInOrder, true);
+  assert.equal(body.series.must_read_in_order, true);
 
-  const positions = body.series.entries.map((e) => e.position);
-  assert.deepEqual(positions, [1, 2, 3, 4], 'entries must arrive in reading order');
-
-  // The point of storing entries separately: it knows about books not owned.
-  const unowned = body.series.entries.filter((e) => !e.isbn);
-  assert.equal(unowned.length, 2);
+  // Owns 2 and 4 of 4, so 1 and 3 are missing and book one is absent — the
+  // case Karen actually cares about when choosing a gift.
+  assert.deepEqual(body.series.ownedPositions, [2, 4]);
+  assert.deepEqual(body.series.missingPositions, [1, 3]);
+  assert.equal(body.series.completeness, 'no-first');
 });
 
 test('a standalone book reports no series rather than an empty one', async () => {

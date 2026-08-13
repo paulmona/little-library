@@ -138,30 +138,51 @@ function renderGrid() {
 // -------------------------------------------------------------- detail view
 
 function seriesMarkup(series, currentIsbn) {
-  if (!series) return '';
+  if (!series) {
+    return `
+      <section class="detail-block">
+        <h2>Series</h2>
+        <p class="series-meta">Not part of a series.</p>
+        <button class="btn btn-quiet" data-action="add-series">Add to a series</button>
+      </section>`;
+  }
 
-  const entries = series.entries.map((entry) => {
-    const owned = Boolean(entry.isbn);
-    const here = entry.isbn === currentIsbn;
-    const cls = `series-entry ${owned ? 'owned' : 'missing'}${here ? ' current' : ''}`;
-    const mark = owned ? '&#10003;' : '&mdash;';
-    return `<li class="${cls}"><span class="mark">${mark}</span> <span class="pos">${text(entry.position)}.</span> ${text(entry.title)}</li>`;
+  const owned = series.books.map((book) => {
+    const here = book.isbn === currentIsbn;
+    const position = book.series_position ?? '?';
+    return `<li class="series-entry owned${here ? ' current' : ''}">
+      <span class="mark">&#10003;</span>
+      <span class="pos">${text(position)}.</span>
+      ${here ? text(book.title ?? book.isbn) : `<a href="/book/${encodeURIComponent(book.isbn)}">${text(book.title ?? book.isbn)}</a>`}
+    </li>`;
   }).join('');
 
-  const owned = series.entries.filter((e) => e.isbn).length;
-  // Never present a total we don't actually know.
-  const count = series.totalKnown
-    ? `${owned} of ${series.totalKnown}`
-    : `${owned} of an unknown number`;
+  // Missing entries are positions, not titles — nobody told us what book 3 is
+  // called. The number is still what is printed on a spine at a garage sale.
+  const missing = series.missingPositions.map((position) => `
+    <li class="series-entry missing">
+      <span class="mark">&mdash;</span>
+      <span class="pos">${text(position)}.</span>
+      <em>not in the library</em>
+    </li>`).join('');
+
+  const count = series.total_known
+    ? `${series.owned} of ${series.total_known}`
+    : `${series.owned} in the library, total unknown`;
 
   return `
     <section class="detail-block">
       <h2>${text(series.name)}</h2>
       <p class="series-meta">
         ${text(count)}
-        ${series.mustReadInOrder ? '<span class="tag tag-order">Read in order</span>' : ''}
+        ${series.must_read_in_order ? '<span class="tag tag-order">Read in order</span>' : ''}
+        ${series.unplaced ? `<span class="tag tag-theme">${text(series.unplaced)} unplaced</span>` : ''}
       </p>
-      <ul class="series-list">${entries}</ul>
+      <ul class="series-list">${owned}${missing}</ul>
+      <div class="detail-actions">
+        <button class="btn btn-quiet" data-action="add-series">Edit series</button>
+        <button class="btn btn-quiet" data-action="leave-series">Remove from series</button>
+      </div>
     </section>`;
 }
 
@@ -335,11 +356,156 @@ function showUndo(isbn) {
   setTimeout(() => bar.remove(), 10000);
 }
 
+
+// ------------------------------------------------------------ series builder
+
+/**
+ * Series are built by hand. Karen names one, says how many books are in it
+ * (she looks that up herself), then ticks which of her books by this author
+ * belong. Nothing is guessed — see VIE-52 for why automation was dropped.
+ */
+async function showSeriesBuilder() {
+  const isbn = currentBook.isbn;
+  const [seriesRes, sameAuthorRes] = await Promise.all([
+    fetch('/api/series'),
+    fetch(`/api/books/${encodeURIComponent(isbn)}/same-author`),
+  ]);
+
+  const { series } = await seriesRes.json();
+  const { books } = await sameAuthorRes.json();
+
+  const options = series
+    .map((s) => `<option value="${s.id}" ${currentBook.series?.id === s.id ? 'selected' : ''}>${text(s.name)} (${s.owned})</option>`)
+    .join('');
+
+  const rows = books.map((book) => {
+    const checked = book.isbn === isbn || book.series_id === currentBook.series?.id;
+    return `
+      <li class="pick">
+        <label>
+          <input type="checkbox" name="pick" value="${text(book.isbn)}" ${checked ? 'checked' : ''}>
+          <span class="pick-title">${text(book.title ?? book.isbn)}</span>
+        </label>
+        <input class="pick-pos" type="number" min="1" max="999" placeholder="#"
+               data-isbn="${text(book.isbn)}" value="${book.suggestedPosition ?? ''}">
+      </li>`;
+  }).join('');
+
+  detailView.innerHTML = `
+    <a class="back" href="/book/${encodeURIComponent(isbn)}">&larr; Back to the book</a>
+    <form class="edit-form" id="series-form">
+      <h1>Series</h1>
+      <p class="edit-note">
+        Pick an existing series or start a new one, then tick which of these books belong.
+        Only books by <strong>${text(currentBook.author ?? 'this author')}</strong> are shown.
+      </p>
+
+      <label class="field">
+        <span>Series</span>
+        <select name="seriesId" id="series-select">
+          <option value="new">— Create a new series —</option>
+          ${options}
+        </select>
+      </label>
+
+      <div id="new-series-fields">
+        <label class="field">
+          <span>Name</span>
+          <input name="name" type="text" placeholder="e.g. Harry Potter">
+        </label>
+        <label class="field">
+          <span>How many books in the series?</span>
+          <input name="totalKnown" type="number" min="1" max="999" placeholder="e.g. 7">
+          <small>Look this up yourself — leave blank if you don't know.</small>
+        </label>
+      </div>
+
+      <label class="field checkbox-field">
+        <input name="mustReadInOrder" type="checkbox">
+        <span>These must be read in order</span>
+      </label>
+
+      <div class="field">
+        <span>Books by this author</span>
+        <ul class="pick-list">${rows || '<li class="pick"><em>No other books by this author.</em></li>'}</ul>
+        <small>The number is the book's place in the series. Leave blank if you're not sure.</small>
+      </div>
+
+      <div class="detail-actions">
+        <button class="btn" type="submit">Save</button>
+        <button class="btn btn-quiet" type="button" data-action="cancel">Cancel</button>
+      </div>
+    </form>`;
+
+  const select = document.getElementById('series-select');
+  const newFields = document.getElementById('new-series-fields');
+  const syncMode = () => { newFields.hidden = select.value !== 'new'; };
+  select.addEventListener('change', syncMode);
+  syncMode();
+
+  document.getElementById('series-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+
+    let seriesId = form.get('seriesId');
+    const mustReadInOrder = form.get('mustReadInOrder') === 'on';
+
+    if (seriesId === 'new') {
+      const name = (form.get('name') ?? '').trim();
+      if (!name) { alert('Give the series a name.'); return; }
+
+      const totalRaw = (form.get('totalKnown') ?? '').trim();
+      const res = await fetch('/api/series', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, totalKnown: totalRaw ? Number(totalRaw) : null, mustReadInOrder }),
+      });
+
+      if (!res.ok) { alert((await res.json()).error ?? 'Could not create that series.'); return; }
+      seriesId = (await res.json()).id;
+    } else {
+      await fetch(`/api/series/${seriesId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mustReadInOrder }),
+      });
+    }
+
+    const picked = [...event.target.querySelectorAll('input[name="pick"]:checked')].map((input) => {
+      const position = event.target.querySelector(`.pick-pos[data-isbn="${input.value}"]`)?.value;
+      return { isbn: input.value, position: position ? Number(position) : null };
+    });
+
+    if (picked.length) {
+      await fetch(`/api/series/${seriesId}/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ books: picked }),
+      });
+    }
+
+    await refreshBooks();
+    await showDetail(isbn);
+  });
+}
+
+async function leaveSeries() {
+  const seriesId = currentBook.series?.id;
+  if (!seriesId) return;
+  if (!window.confirm(`Remove "${currentBook.title ?? currentBook.isbn}" from ${currentBook.series.name}?`)) return;
+
+  await fetch(`/api/series/${seriesId}/books/${encodeURIComponent(currentBook.isbn)}`, { method: 'DELETE' });
+  await refreshBooks();
+  await showDetail(currentBook.isbn);
+}
+
 detailView.addEventListener('click', (event) => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (action === 'edit') showEdit();
   if (action === 'cancel') showDetail(currentBook.isbn);
   if (action === 'remove') removeCurrent();
+  if (action === 'add-series') showSeriesBuilder();
+  if (action === 'leave-series') leaveSeries();
 });
 
 // ------------------------------------------------------------------ routing

@@ -8,7 +8,11 @@ import { openDatabase } from './db/index.js';
 import {
   listBooks, getBook, getStats, applyEdit, removeBook, restoreBook, ENRICHABLE_FIELDS,
 } from './db/books.js';
-import { getSeriesEntries } from './db/series.js';
+import {
+  getSeriesEntries, listSeriesWithCounts, getSeriesById, createSeries, updateSeries,
+  addBooksToSeries, removeBookFromSeries, booksBySameAuthor, seriesState,
+} from './db/series.js';
+import { inferSeries } from './enrich/infer.js';
 import { loadSampleLibrary } from './sample/load.js';
 import { syncFromSheet } from './sheet/ingest.js';
 
@@ -52,11 +56,7 @@ export function buildServer(config, db) {
     // A book in a series carries the whole ordered list, including entries the
     // library doesn't own. That is what the detail view and the missing-books
     // view are both built on.
-    const series = book.series_id
-      ? { name: book.series_name, totalKnown: book.total_known, mustReadInOrder: book.must_read_in_order, entries: getSeriesEntries(db, book.series_id) }
-      : null;
-
-    return { ...book, series };
+    return { ...book, series: book.series_id ? seriesState(db, book.series_id) : null };
   });
 
   app.patch('/api/books/:isbn', async (request, reply) => {
@@ -85,6 +85,75 @@ export function buildServer(config, db) {
       return reply.code(404).send({ error: 'Not removed' });
     }
     return { restored: request.params.isbn, book: getBook(db, request.params.isbn) };
+  });
+
+  // ---- series -------------------------------------------------------------
+  // Membership is entirely manual. See VIE-52: automated resolution covered
+  // 25-30% of this library at best, and a wrong series would put books Karen
+  // does not own onto the list she shops from.
+
+  app.get('/api/series', async () => ({ series: listSeriesWithCounts(db) }));
+
+  app.get('/api/series/:id', async (request, reply) => {
+    const state = seriesState(db, Number(request.params.id));
+    if (!state) return reply.code(404).send({ error: 'No such series' });
+    return state;
+  });
+
+  app.post('/api/series', async (request, reply) => {
+    const { name, totalKnown = null, mustReadInOrder = false } = request.body ?? {};
+    if (!name || !String(name).trim()) {
+      return reply.code(400).send({ error: 'A series needs a name' });
+    }
+
+    try {
+      return createSeries(db, { name: String(name).trim(), totalKnown, mustReadInOrder });
+    } catch (err) {
+      // name is UNIQUE; adding to the existing one is almost certainly intended.
+      if (String(err.message).includes('UNIQUE')) {
+        return reply.code(409).send({ error: 'A series with that name already exists' });
+      }
+      throw err;
+    }
+  });
+
+  app.patch('/api/series/:id', async (request, reply) => {
+    const updated = updateSeries(db, Number(request.params.id), request.body ?? {});
+    if (!updated) return reply.code(404).send({ error: 'No such series' });
+    return updated;
+  });
+
+  app.post('/api/series/:id/books', async (request, reply) => {
+    const id = Number(request.params.id);
+    if (!getSeriesById(db, id)) return reply.code(404).send({ error: 'No such series' });
+
+    const members = (request.body?.books ?? []).filter((m) => m && m.isbn);
+    if (members.length === 0) return reply.code(400).send({ error: 'No books supplied' });
+
+    addBooksToSeries(db, id, members);
+    return seriesState(db, id);
+  });
+
+  app.delete('/api/series/:id/books/:isbn', async (request, reply) => {
+    if (!removeBookFromSeries(db, request.params.isbn)) {
+      return reply.code(404).send({ error: 'No such book' });
+    }
+    return seriesState(db, Number(request.params.id));
+  });
+
+  /**
+   * The shortlist Karen picks from when building a series: other books by the
+   * same author, with a position pre-filled from the title where one is
+   * already encoded, e.g. "... (Baby-Sitters Little Sister #16)".
+   */
+  app.get('/api/books/:isbn/same-author', async (request) => {
+    const candidates = booksBySameAuthor(db, request.params.isbn);
+    return {
+      books: candidates.map((book) => ({
+        ...book,
+        suggestedPosition: book.series_position ?? inferSeries(book.title).position,
+      })),
+    };
   });
 
   return app;
