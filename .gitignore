@@ -1,0 +1,21 @@
+node_modules/
+
+# Configuration holds the sheet gateway token and Google Books API key.
+# Only config.example.json belongs in the repo.
+config.json
+
+# The database is the deployment's data, never the repo's.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+data/
+
+# Real library exports. The importer ships; the catalogue does not.
+books.json
+
+.DS_Store
+*.log
+.env
