@@ -20,6 +20,8 @@
     <div class="stats-row">
       <div class="stat"><div class="stat-num" id="stat-books">&mdash;</div><div class="stat-label">Books</div></div>
       <div class="stat"><div class="stat-num" id="stat-authors">&mdash;</div><div class="stat-label">Authors</div></div>
+      <div class="stat"><div class="stat-num" id="stat-genres">&mdash;</div><div class="stat-label">Genres</div></div>
+      <div class="stat"><div class="stat-num" id="stat-series">&mdash;</div><div class="stat-label">Series</div></div>
       <div class="stat"><div class="stat-num" id="stat-shown">&mdash;</div><div class="stat-label">Showing</div></div>
     </div>
 
@@ -27,6 +29,18 @@
       <div class="search-wrap">
         <input id="search" type="search" placeholder="Search title or author" autocomplete="off">
       </div>
+      <select id="f-genre" aria-label="Filter by genre">
+        <option value="">All genres</option>
+      </select>
+      <select id="f-series" aria-label="Filter by series">
+        <option value="">Series &amp; standalone</option>
+        <option value="in">In a series</option>
+        <option value="order">Must be read in order</option>
+        <option value="nofirst">Missing book 1</option>
+        <option value="standalone">Standalone only</option>
+      </select>
+      <input id="f-age" type="number" min="0" max="18" placeholder="Age" aria-label="Filter by reader age">
+      <button id="clear-filters" class="btn btn-quiet" type="button" hidden>Clear</button>
       <select id="sort" aria-label="Sort books">
         <option value="title">Title</option>
         <option value="author">Author</option>

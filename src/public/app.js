@@ -5,6 +5,10 @@ const grid = document.getElementById('grid');
 const searchInput = document.getElementById('search');
 const sortSelect = document.getElementById('sort');
 
+const genreSelect = document.getElementById('f-genre');
+const seriesSelect = document.getElementById('f-series');
+const ageInput = document.getElementById('f-age');
+const clearButton = document.getElementById('clear-filters');
 const pageSizeSelect = document.getElementById('page-size');
 const pageSizeCustom = document.getElementById('page-size-custom');
 const pager = document.getElementById('pager');
@@ -12,6 +16,7 @@ const pager = document.getElementById('pager');
 const SORT_KEY = 'little-library.sort';
 const SCROLL_KEY = 'little-library.scroll';
 const PAGE_SIZE_KEY = 'little-library.pageSize';
+const FILTER_KEY = 'little-library.filters';
 
 let allBooks = [];
 let page = 1;
@@ -135,17 +140,97 @@ function cardMarkup(book) {
     </a>`;
 }
 
-function matches(book, query) {
-  if (!query) return true;
-  return `${book.title ?? ''} ${book.author ?? ''} ${book.series_name ?? ''}`
-    .toLowerCase()
-    .includes(query);
+/**
+ * Filters stack: each narrows what the others left, and all of them combine
+ * with the search box. At 643 books search alone isn't enough to answer
+ * "what have I got for a nine-year-old that isn't part of a series".
+ */
+function matches(book, { query, genre, series, age }) {
+  if (query) {
+    const haystack = `${book.title ?? ''} ${book.author ?? ''} ${book.series_name ?? ''} ${(book.topics ?? []).join(' ')}`;
+    if (!haystack.toLowerCase().includes(query)) return false;
+  }
+
+  if (genre && book.genre !== genre) return false;
+
+  if (age !== null) {
+    // A book with no age range can't be confirmed suitable, so it is excluded
+    // rather than assumed. The result count makes that visible.
+    if (book.age_min === null && book.age_max === null) return false;
+    if (book.age_min !== null && age < book.age_min) return false;
+    if (book.age_max !== null && age > book.age_max) return false;
+  }
+
+  if (series) {
+    const inSeries = Boolean(book.series_id);
+    if (series === 'in' && !inSeries) return false;
+    if (series === 'standalone' && inSeries) return false;
+    if (series === 'order' && !book.series?.readInOrder) return false;
+    if (series === 'nofirst' && book.series?.completeness !== 'no-first') return false;
+  }
+
+  return true;
+}
+
+function currentFilters() {
+  const age = ageInput.value.trim();
+  return {
+    query: searchInput.value.trim().toLowerCase(),
+    genre: genreSelect.value,
+    series: seriesSelect.value,
+    age: age === '' ? null : Number(age),
+  };
+}
+
+function saveFilters() {
+  const { genre, series, age } = currentFilters();
+  localStorage.setItem(FILTER_KEY, JSON.stringify({ genre, series, age }));
+}
+
+function restoreFilters() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FILTER_KEY) ?? '{}');
+    genreSelect.value = saved.genre ?? '';
+    seriesSelect.value = saved.series ?? '';
+    ageInput.value = saved.age ?? '';
+  } catch {
+    // A corrupt preference is not worth failing over.
+  }
+}
+
+/**
+ * Genres actually present, ordered by how many books carry them.
+ *
+ * The genre inference falls back to "first subject line", which produces a long
+ * tail of junk — 65 genres with exactly one book each, things like "Apartment
+ * Houses". Alphabetical order would bury Fantasy and Mystery under that noise,
+ * so the useful ones lead and the counts make the tail obviously trivial.
+ */
+function populateGenres() {
+  const chosen = genreSelect.value;
+
+  const counts = new Map();
+  for (const book of allBooks) {
+    if (book.genre) counts.set(book.genre, (counts.get(book.genre) ?? 0) + 1);
+  }
+
+  const genres = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+  genreSelect.innerHTML = '<option value="">All genres</option>'
+    + genres.map(([g, n]) => `<option value="${text(g)}">${text(g)} (${n})</option>`).join('');
+
+  // Keep the selection if it still exists after a data refresh.
+  genreSelect.value = counts.has(chosen) ? chosen : '';
 }
 
 function renderGrid() {
-  const query = searchInput.value.trim().toLowerCase();
-  // Search spans the whole library, not just the visible page.
-  const visible = allBooks.filter((book) => matches(book, query));
+  const filters = currentFilters();
+  const active = Boolean(filters.query || filters.genre || filters.series || filters.age !== null);
+  clearButton.hidden = !active;
+
+  // Filtering spans the whole library, not just the visible page.
+  const visible = allBooks.filter((book) => matches(book, filters));
 
   const size = pageSize();
   const perPage = size === 'all' ? Math.max(visible.length, 1) : size;
@@ -156,8 +241,14 @@ function renderGrid() {
   const pageBooks = visible.slice(start, start + perPage);
 
   document.getElementById('stat-shown').textContent = visible.length;
+  document.getElementById('stat-genres').textContent =
+    new Set(visible.map((b) => b.genre).filter(Boolean)).size;
+  document.getElementById('stat-series').textContent =
+    new Set(visible.map((b) => b.series_id).filter(Boolean)).size;
 
-  const scope = query ? `${visible.length} of ${allBooks.length} books match “${query}”` : `${allBooks.length} books`;
+  const scope = active
+    ? `${visible.length} of ${allBooks.length} books`
+    : `${allBooks.length} books`;
   const range = visible.length && size !== 'all' && totalPages > 1
     ? ` — showing ${start + 1}–${start + pageBooks.length}`
     : '';
@@ -165,7 +256,10 @@ function renderGrid() {
 
   grid.innerHTML = pageBooks.length
     ? pageBooks.map(cardMarkup).join('')
-    : '<div class="empty-state"><div class="big">&#128269;</div><div>Nothing matches that search.</div></div>';
+    : `<div class="empty-state"><div class="big">&#128269;</div>
+       <div>Nothing matches.</div>
+       <div><button class="btn btn-quiet" type="button" data-action="clear">Clear filters</button></div>
+       </div>`;
 
   pager.innerHTML = pagerMarkup(totalPages);
   pager.hidden = pager.innerHTML === '';
@@ -640,6 +734,8 @@ async function refreshBooks() {
   allBooks = (await booksRes.json()).books;
   const stats = await statsRes.json();
 
+  populateGenres();
+
   document.getElementById('library-name').textContent = stats.library;
   document.getElementById('stat-books').textContent = stats.books;
   document.getElementById('stat-authors').textContent = stats.authors;
@@ -696,6 +792,32 @@ sortSelect.value = localStorage.getItem(SORT_KEY) ?? 'title';
 sortSelect.addEventListener('change', () => { page = 1; load(); });
 // A new search should start at the first page, not strand you on page 7 of 2.
 searchInput.addEventListener('input', () => { page = 1; renderGrid(); });
+
+function onFilterChange() {
+  page = 1;
+  saveFilters();
+  renderGrid();
+}
+
+genreSelect.addEventListener('change', onFilterChange);
+seriesSelect.addEventListener('change', onFilterChange);
+ageInput.addEventListener('input', onFilterChange);
+
+function clearFilters() {
+  searchInput.value = '';
+  genreSelect.value = '';
+  seriesSelect.value = '';
+  ageInput.value = '';
+  onFilterChange();
+}
+
+clearButton.addEventListener('click', clearFilters);
+// Getting stuck on an empty grid with no obvious way out is the failure to avoid.
+grid.addEventListener('click', (event) => {
+  if (event.target.closest('[data-action="clear"]')) clearFilters();
+});
+
+restoreFilters();
 
 load().catch((err) => {
   shell.innerHTML = '<div class="empty-state"><div class="big">&#9888;</div><div>Could not reach the library.</div></div>';
