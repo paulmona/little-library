@@ -157,5 +157,7 @@ test('stats count distinct authors', () => {
   applyEnrichment(db, '2', { author: 'Same' });
   applyEnrichment(db, '3', { author: 'Different' });
 
-  assert.deepEqual(getStats(db), { books: 3, authors: 2 });
+  const stats = getStats(db);
+  assert.equal(stats.books, 3);
+  assert.equal(stats.authors, 2);
 });

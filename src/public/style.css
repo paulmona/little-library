@@ -49,6 +49,16 @@ select { cursor: pointer; }
 
 .results-meta { font-size: 13px; color: var(--text3); font-family: var(--sans); margin-bottom: 1rem; }
 
+.enrich-status {
+  font-size: 13px;
+  font-family: var(--sans);
+  color: var(--text2);
+  background: var(--surface2, rgba(0, 0, 0, 0.04));
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
 
 a.book-card { display: block; text-decoration: none; color: inherit; }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { runMaintenance } from '../src/server.js';
 import { openDatabase } from '../src/db/index.js';
-import { addBook, getBook, listBooks, applyEdit } from '../src/db/books.js';
+import { addBook, getBook, listBooks, applyEdit, getStats, removeBook } from '../src/db/books.js';
 import { enrichLibrary } from '../src/enrich/run.js';
 
 const config = {
@@ -139,6 +139,32 @@ test('the outage guard does not fire on a library of genuinely unknown ISBNs', a
 
   assert.equal(run.abandoned, false);
   assert.equal(run.failed, 20, 'every book was attempted and stamped');
+});
+
+test('stats report how many books are still waiting to be looked up', async () => {
+  // This is what tells a cover that does not exist from one that has not
+  // arrived yet. Without it, a half-loaded library looks like a broken one.
+  const db = openDatabase(':memory:');
+  addBook(db, '9780000000007');
+  addBook(db, '9780000000008');
+
+  assert.equal(getStats(db).pending, 2);
+
+  await runMaintenance(db, noSheet, {
+    fetchImpl: fakeFetch({ titles: { 9780000000007: 'Found' } }),
+  });
+
+  // Both were attempted; one resolved, one did not. Neither is still pending.
+  assert.equal(getStats(db).pending, 0, 'an attempted book is not still waiting');
+});
+
+test('a removed book is not counted as pending forever', () => {
+  const db = openDatabase(':memory:');
+  addBook(db, '9780000000009');
+  assert.equal(getStats(db).pending, 1);
+
+  removeBook(db, '9780000000009');
+  assert.equal(getStats(db).pending, 0);
 });
 
 test('enrichment does not overwrite what Karen has corrected', async () => {

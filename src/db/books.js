@@ -190,5 +190,12 @@ export function getStats(db) {
   const { authors } = db.prepare(
     "SELECT COUNT(DISTINCT author) AS authors FROM books WHERE removed_at IS NULL AND author IS NOT NULL AND author != ''",
   ).get();
-  return { books, authors };
+  // Books the background pass has not looked up yet. Zero means the catalogue
+  // is as complete as the internet is going to make it, which is the only way
+  // to tell a missing cover from one that has not arrived.
+  const { pending } = db.prepare(
+    'SELECT COUNT(*) AS pending FROM books WHERE removed_at IS NULL AND enriched_at IS NULL',
+  ).get();
+
+  return { books, authors, pending };
 }

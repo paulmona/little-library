@@ -739,6 +739,42 @@ async function refreshBooks() {
   document.getElementById('library-name').textContent = stats.library;
   document.getElementById('stat-books').textContent = stats.books;
   document.getElementById('stat-authors').textContent = stats.authors;
+
+  showEnrichProgress(stats);
+}
+
+const ENRICH_POLL_MS = 20_000;
+let enrichPoll = null;
+
+/**
+ * While the background pass is still working through the library, say so.
+ * Without this a book with no cover is ambiguous: it might have none, or it
+ * might not have been looked up yet, and there is no way to tell by looking.
+ */
+function showEnrichProgress(stats) {
+  const banner = document.getElementById('enrich-status');
+  const pending = stats.pending ?? 0;
+
+  if (pending === 0) {
+    banner.hidden = true;
+    if (enrichPoll) { clearInterval(enrichPoll); enrichPoll = null; }
+    return;
+  }
+
+  const done = stats.books - pending;
+  banner.hidden = false;
+  banner.textContent =
+    `Looking up book details — ${done} of ${stats.books} done. `
+    + 'Covers and titles appear as they arrive; this page updates itself.';
+
+  if (enrichPoll) return;
+  enrichPoll = setInterval(async () => {
+    // Only while the grid is on screen. Refreshing under an open edit form
+    // would throw away what someone is part way through typing.
+    if (gridView.hidden) return;
+    await refreshBooks();
+    renderGrid();
+  }, ENRICH_POLL_MS);
 }
 
 async function load() {
