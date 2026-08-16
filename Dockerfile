@@ -18,6 +18,10 @@ VOLUME ["/data"]
 ENV PORT=8080
 EXPOSE 8080
 
+# /app is read-only at runtime and /data is a mount, so the image works under
+# any uid. Override with --user when the mount is owned by someone else.
+USER node
+
 # /health also reports which integrations are configured, but a 200 is enough
 # to know the server is up and the database opened.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

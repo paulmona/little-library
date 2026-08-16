@@ -96,8 +96,25 @@ library.
 
 No custom template is required. Add a container with the generic template,
 using the repository above, one port mapping, one path mapping to `/data`, and
-the variables you need. The image runs as root so it can write to an `appdata`
-share whatever its ownership; pass `--user` if you would rather it did not.
+the variables you need.
+
+The container runs as the unprivileged `node` user (uid 1000), so the mapped
+path has to be writable by it. On a stock `appdata` share owned by
+`nobody:users` that means putting `--user 99:100` in Extra Parameters, which is
+easier than changing ownership and keeps the app off root.
+
+**Updating is not a restart.** Tags are mutable, so `latest` pointing at a new
+image does not mean a running container will pick it up, and restarting it will
+not either — it still has the old image locally. Use **Force Update** on the
+container, or pull and then Edit → Apply. Skipping this looks exactly like a
+deploy that silently did nothing, which is a day nobody gets back.
+
+Confirm what you are actually running rather than assuming:
+
+```sh
+docker exec little-library cat /app/package.json | grep version
+docker inspect little-library --format '{{.Config.Image}}'
+```
 
 ### Rolling back
 
