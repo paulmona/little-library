@@ -22,6 +22,11 @@ The Sheet is only an inbox. Once a book is imported, this app's database is the
 source of truth — that's what lets you edit a book's details and have the change
 survive the next import.
 
+The app pulls new scans and looks up their titles, authors and covers on startup
+and every fifteen minutes after that. Scanning a book is the only step: nothing
+has to be run by hand, and a correction you make here is never overwritten by a
+later lookup.
+
 ## Running it locally
 
 Requires Node 24 or newer. No build step, no bundler.

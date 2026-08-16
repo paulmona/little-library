@@ -138,7 +138,10 @@ test('enrichLibrary only touches books that need it', async () => {
   });
 
   const first = await enrichLibrary(db, { fetchImpl, delayMs: 0 });
-  assert.deepEqual(first, { considered: 1, enriched: 1, failed: 0 });
+  assert.deepEqual(
+    { considered: first.considered, enriched: first.enriched, failed: first.failed },
+    { considered: 1, enriched: 1, failed: 0 },
+  );
   assert.equal(getBook(db, '9790000000805').title, 'Filled In');
 
   // Second run: already enriched, so nothing is reconsidered.

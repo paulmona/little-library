@@ -17,20 +17,34 @@ export async function enrichLibrary(db, {
   delayMs = 200,
   onProgress = () => {},
   fetchImpl = fetch,
+  stopAfterConsecutiveFailures = 0,
 } = {}) {
   const candidates = listBooks(db).filter((book) => (force ? true : !book.enriched_at || !book.title));
 
   let enriched = 0;
   let failed = 0;
+  let consecutiveFailures = 0;
+  let abandoned = false;
 
   for (const book of candidates) {
     const fields = await enrichIsbn(book.isbn, { apiKey, fetchImpl });
 
+    // Every source failing in a row means the network is down, not that the
+    // library is full of unknown books. Stop rather than stamp the whole
+    // catalogue as attempted, which would need --refresh to ever undo.
+    if (!fields && stopAfterConsecutiveFailures
+        && consecutiveFailures + 1 >= stopAfterConsecutiveFailures) {
+      abandoned = true;
+      break;
+    }
+
     if (fields) {
+      consecutiveFailures = 0;
       const written = applyEnrichment(db, book.isbn, fields);
       enriched += 1;
       onProgress({ isbn: book.isbn, title: fields.title, written });
     } else {
+      consecutiveFailures += 1;
       // Nothing recognised the ISBN. Still stamp the attempt so it is not
       // retried on every run; a forced refresh can try again later.
       applyEnrichment(db, book.isbn, {});
@@ -42,5 +56,5 @@ export async function enrichLibrary(db, {
     if (delayMs) await sleep(delayMs);
   }
 
-  return { considered: candidates.length, enriched, failed };
+  return { considered: candidates.length, enriched, failed, abandoned };
 }

@@ -14,12 +14,50 @@ import {
   allSeriesStates, incompleteSeries,
 } from './db/series.js';
 import { inferSeries } from './enrich/infer.js';
+import { enrichLibrary } from './enrich/run.js';
 import { loadSampleLibrary } from './sample/load.js';
 import { syncFromSheet } from './sheet/ingest.js';
 
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), 'public');
 
 const VALID_SORTS = new Set(['title', 'author', 'added', 'genre']);
+
+// Enough consecutive misses to mean the network is down rather than the books
+// being obscure. Below this, an unrecognised ISBN is just an unrecognised ISBN.
+const OUTAGE_THRESHOLD = 10;
+
+/**
+ * One background pass: pull new scans from the sheet, then fill in anything
+ * still bare. Runs on startup and on a timer, because a book scanned on the
+ * phone has to become a real catalogue entry without anyone running a command.
+ *
+ * Never throws. An unreachable Google must not stop Karen reading her own
+ * library, so every failure is reported and swallowed.
+ */
+export async function runMaintenance(db, config, { fetchImpl = fetch } = {}) {
+  const result = { added: 0, enriched: 0, failed: 0, abandoned: false, errors: [] };
+
+  if (config.sheet.gatewayUrl) {
+    const sync = await syncFromSheet(db, config.sheet, { fetchImpl });
+    if (sync.ok) result.added = sync.added;
+    else result.errors.push(`sheet sync: ${sync.error}`);
+  }
+
+  try {
+    const run = await enrichLibrary(db, {
+      apiKey: config.googleBooks.apiKey,
+      fetchImpl,
+      stopAfterConsecutiveFailures: OUTAGE_THRESHOLD,
+    });
+    result.enriched = run.enriched;
+    result.failed = run.failed;
+    result.abandoned = run.abandoned;
+  } catch (err) {
+    result.errors.push(`enrichment: ${err.message}`);
+  }
+
+  return result;
+}
 
 export function buildServer(config, db) {
   const app = Fastify({ logger: false });
@@ -212,16 +250,33 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     }
   }
 
-  // Pull new scans in periodically so a book scanned on the phone appears
-  // without anyone doing anything. Failures are logged, never fatal.
-  if (!demo && config.sheet.gatewayUrl) {
-    const sync = async () => {
-      const result = await syncFromSheet(db, config.sheet);
-      if (!result.ok) console.warn(`[little-library] sheet sync failed: ${result.error}`);
-      else if (result.added > 0) console.log(`[little-library] sheet sync: ${result.added} new`);
+  // Pull new scans in periodically and enrich them, so a book scanned on the
+  // phone becomes a real entry without anyone doing anything.
+  if (!demo) {
+    let running = false;
+
+    const tick = async () => {
+      // The first pass over a full library takes minutes. Without this the
+      // timer would start a second pass on top of the first.
+      if (running) return;
+      running = true;
+
+      try {
+        const result = await runMaintenance(db, config);
+        if (result.added || result.enriched) {
+          console.log(`[little-library] ${result.added} new, ${result.enriched} enriched, ${result.failed} unresolved`);
+        }
+        if (result.abandoned) {
+          console.warn('[little-library] enrichment stopped early: lookups are failing, will retry');
+        }
+        for (const error of result.errors) console.warn(`[little-library] ${error}`);
+      } finally {
+        running = false;
+      }
     };
-    sync();
-    setInterval(sync, 15 * 60 * 1000).unref();
+
+    tick();
+    setInterval(tick, 15 * 60 * 1000).unref();
   }
 
   buildServer(config, db)
