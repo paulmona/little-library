@@ -60,6 +60,61 @@ configured: `PORT`, `DATABASE_PATH`, `SHEET_GATEWAY_URL`, `SHEET_GATEWAY_TOKEN`,
 **`config.json` is gitignored and must stay that way.** The gateway URL is itself
 a credential: anyone holding it can read and append to the sheet.
 
+## Running it in Docker
+
+Images are published to the GitHub Container Registry on every push to `main`:
+
+```
+ghcr.io/paulmona/little-library:latest
+```
+
+```sh
+docker run -d --name little-library \
+  -p 8080:8080 \
+  -v /mnt/user/appdata/little-library:/data \
+  -e LIBRARY_NAME="Little Library" \
+  -e GOOGLE_BOOKS_KEY="..." \
+  -e SHEET_GATEWAY_URL="..." \
+  -e SHEET_GATEWAY_TOKEN="..." \
+  ghcr.io/paulmona/little-library:latest
+```
+
+Nothing else is needed: one volume and the environment variables above. The
+image contains no configuration, so a public image can never carry a real
+deployment's credentials.
+
+| | |
+|---|---|
+| Port | `8080` |
+| Volume | `/data` — holds `library.db`, created on first run |
+| Health | `GET /health`, also wired up as a container `HEALTHCHECK` |
+
+The database is the only state. Back up `/data` and you have backed up the
+library.
+
+### Unraid
+
+No custom template is required. Add a container with the generic template,
+using the repository above, one port mapping, one path mapping to `/data`, and
+the variables you need. The image runs as root so it can write to an `appdata`
+share whatever its ownership; pass `--user` if you would rather it did not.
+
+### Rolling back
+
+`latest` moves every time `main` builds, so the image it used to point at ends
+up with no tag on it. Every build is therefore also tagged with its commit sha:
+
+```
+ghcr.io/paulmona/little-library:a1b2c3d
+```
+
+Pin that if you need to go back, or note the running digest before you update:
+
+```sh
+docker image inspect "$(docker inspect little-library --format '{{.Image}}')" \
+  --format '{{json .RepoDigests}}'
+```
+
 ## Tests
 
 ```sh

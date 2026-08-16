@@ -1,0 +1,17 @@
+node_modules/
+.git/
+.github/
+
+# Never bake a real deployment into a public image.
+config.json
+books.json
+data/
+*.db
+*.db-wal
+*.db-shm
+
+test/
+README.md
+LICENSE
+.DS_Store
+*.log
