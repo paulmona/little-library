@@ -7,11 +7,23 @@ import { parseAgeRange } from '../import/books-json.js';
  * the network.
  */
 
-export async function lookupGoogleBooks(isbn, { apiKey = '', fetchImpl = fetch } = {}) {
+/**
+ * A source that is unreachable is not the same as a source that has never
+ * heard of the book. The first should be retried, the second should not, and
+ * for a long time both looked identical from the outside: an empty cover.
+ *
+ * 429 and 5xx are the service having a bad minute. A 404 is an answer.
+ */
+const RETRYABLE = (status) => status === 429 || status >= 500;
+
+export async function lookupGoogleBooks(isbn, { apiKey = '', fetchImpl = fetch, onSourceDown = () => {} } = {}) {
   try {
     const key = apiKey ? `&key=${apiKey}&country=US` : '';
     const res = await fetchImpl(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}${key}`);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (RETRYABLE(res.status)) onSourceDown('google-books');
+      return null;
+    }
 
     const volume = (await res.json()).items?.[0]?.volumeInfo;
     if (!volume) return null;
@@ -27,14 +39,18 @@ export async function lookupGoogleBooks(isbn, { apiKey = '', fetchImpl = fetch }
       cover: volume.imageLinks?.thumbnail ?? volume.imageLinks?.smallThumbnail ?? '',
     };
   } catch {
+    onSourceDown('google-books');
     return null;
   }
 }
 
-export async function lookupOpenLibrary(isbn, { fetchImpl = fetch } = {}) {
+export async function lookupOpenLibrary(isbn, { fetchImpl = fetch, onSourceDown = () => {} } = {}) {
   try {
     const res = await fetchImpl(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (RETRYABLE(res.status)) onSourceDown('open-library');
+      return null;
+    }
 
     const info = (await res.json())[`ISBN:${isbn}`];
     if (!info) return null;
@@ -48,14 +64,18 @@ export async function lookupOpenLibrary(isbn, { fetchImpl = fetch } = {}) {
       cover: info.cover?.medium ?? info.cover?.large ?? '',
     };
   } catch {
+    onSourceDown('open-library');
     return null;
   }
 }
 
-export async function lookupOpenLibrarySearch(isbn, { fetchImpl = fetch } = {}) {
+export async function lookupOpenLibrarySearch(isbn, { fetchImpl = fetch, onSourceDown = () => {} } = {}) {
   try {
     const res = await fetchImpl(`https://openlibrary.org/search.json?isbn=${isbn}&fields=title,author_name,first_publish_year,subject,cover_i&limit=1`);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (RETRYABLE(res.status)) onSourceDown('open-library-search');
+      return null;
+    }
 
     const doc = (await res.json()).docs?.[0];
     if (!doc) return null;
@@ -68,6 +88,7 @@ export async function lookupOpenLibrarySearch(isbn, { fetchImpl = fetch } = {}) 
       cover: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg` : '',
     };
   } catch {
+    onSourceDown('open-library-search');
     return null;
   }
 }
@@ -77,14 +98,17 @@ export async function lookupOpenLibrarySearch(isbn, { fetchImpl = fetch } = {}) 
  * the same book. Matching on author as well as title is deliberate: without it
  * a different book sharing a title supplies the cover.
  */
-export async function coverFromOtherEdition(title, author, { apiKey = '', fetchImpl = fetch } = {}) {
+export async function coverFromOtherEdition(title, author, { apiKey = '', fetchImpl = fetch, onSourceDown = () => {} } = {}) {
   if (!title || !author || author === 'Unknown author') return '';
 
   try {
     const query = `intitle:${title} inauthor:${author.split(',')[0]}`;
     const key = apiKey ? `&key=${apiKey}&country=US` : '';
     const res = await fetchImpl(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5${key}`);
-    if (!res.ok) return '';
+    if (!res.ok) {
+      if (RETRYABLE(res.status)) onSourceDown('google-books-cover');
+      return '';
+    }
 
     for (const item of (await res.json()).items ?? []) {
       const links = item.volumeInfo?.imageLinks;
@@ -93,7 +117,9 @@ export async function coverFromOtherEdition(title, author, { apiKey = '', fetchI
       }
     }
   } catch {
-    // A missing cover is cosmetic. Never fail enrichment over it.
+    // A missing cover is cosmetic. Never fail enrichment over it, but do say
+    // the source was unreachable so the book is not written off as coverless.
+    onSourceDown('google-books-cover');
   }
 
   return '';
@@ -104,12 +130,17 @@ export async function coverFromOtherEdition(title, author, { apiKey = '', fetchI
  * Returns null when no source recognised the ISBN at all.
  */
 export async function enrichIsbn(isbn, options = {}) {
-  const google = await lookupGoogleBooks(isbn, options);
-  const openLibrary = await lookupOpenLibrary(isbn, options);
-  const search = google || openLibrary ? null : await lookupOpenLibrarySearch(isbn, options);
+  // Which sources could not be reached on this attempt. An empty cover with
+  // this set populated means "ask again later", not "this book has no jacket".
+  const down = new Set();
+  const opts = { ...options, onSourceDown: (source) => down.add(source) };
+
+  const google = await lookupGoogleBooks(isbn, opts);
+  const openLibrary = await lookupOpenLibrary(isbn, opts);
+  const search = google || openLibrary ? null : await lookupOpenLibrarySearch(isbn, opts);
 
   const found = google ?? openLibrary ?? search;
-  if (!found) return null;
+  if (!found) return down.size > 0 ? { degraded: [...down] } : null;
 
   const title = google?.title ?? openLibrary?.title ?? search?.title ?? '';
   const authors = google?.authors?.length ? google.authors
@@ -124,7 +155,7 @@ export async function enrichIsbn(isbn, options = {}) {
 
   const author = authors.join(', ');
   let cover = google?.cover || openLibrary?.cover || search?.cover || '';
-  if (!cover) cover = await coverFromOtherEdition(title, author, options);
+  if (!cover) cover = await coverFromOtherEdition(title, author, opts);
 
   const { age_min, age_max } = parseAgeRange(inferAge(subjects));
   const year = google?.year || openLibrary?.year || search?.year || '';
@@ -140,5 +171,6 @@ export async function enrichIsbn(isbn, options = {}) {
     description: google?.description || null,
     page_count: google?.pageCount || openLibrary?.pageCount || null,
     year: year ? Number(year) : null,
+    ...(down.size > 0 ? { degraded: [...down] } : {}),
   };
 }

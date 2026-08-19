@@ -35,7 +35,7 @@ const OUTAGE_THRESHOLD = 10;
  * library, so every failure is reported and swallowed.
  */
 export async function runMaintenance(db, config, { fetchImpl = fetch } = {}) {
-  const result = { added: 0, enriched: 0, failed: 0, abandoned: false, errors: [] };
+  const result = { added: 0, enriched: 0, failed: 0, incomplete: 0, abandoned: false, errors: [] };
 
   if (config.sheet.gatewayUrl) {
     const sync = await syncFromSheet(db, config.sheet, { fetchImpl });
@@ -51,6 +51,7 @@ export async function runMaintenance(db, config, { fetchImpl = fetch } = {}) {
     });
     result.enriched = run.enriched;
     result.failed = run.failed;
+    result.incomplete = run.incomplete;
     result.abandoned = run.abandoned;
   } catch (err) {
     result.errors.push(`enrichment: ${err.message}`);
@@ -265,6 +266,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         const result = await runMaintenance(db, config);
         if (result.added || result.enriched) {
           console.log(`[little-library] ${result.added} new, ${result.enriched} enriched, ${result.failed} unresolved`);
+        }
+        if (result.incomplete > 0) {
+          console.warn(`[little-library] ${result.incomplete} left pending: a lookup source was unreachable, will retry`);
         }
         if (result.abandoned) {
           console.warn('[little-library] enrichment stopped early: lookups are failing, will retry');

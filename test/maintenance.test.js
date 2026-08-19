@@ -178,3 +178,108 @@ test('enrichment does not overwrite what Karen has corrected', async () => {
 
   assert.equal(getBook(db, '9780000000006').title, 'The Name She Wants');
 });
+
+// ---------------------------------------------------------- degraded sources
+
+/**
+ * The bug these cover: on 2026-08-16 the container's only enrichment pass ran
+ * while Open Library was down. Google answered with metadata but no jacket for
+ * 28 books, so they were written with an empty cover and stamped as finished.
+ * A stamped book is never retried, so those covers were lost silently and had
+ * to be backfilled by hand three days later.
+ */
+
+/** Google answers with metadata but no cover; Open Library is unreachable. */
+function outageFetch({ status = null } = {}) {
+  return async (url) => {
+    if (url.includes('googleapis.com/books')) {
+      if (url.includes('intitle:')) return { ok: true, json: async () => ({ items: [] }) };
+      return {
+        ok: true,
+        json: async () => ({
+          items: [{ volumeInfo: { title: 'Metadata Only', authors: ['A Writer'], categories: ['Fiction'] } }],
+        }),
+      };
+    }
+    // Open Library: down, either by transport error or by a retryable status.
+    if (status) return { ok: false, status, json: async () => ({}) };
+    throw new Error('ETIMEDOUT');
+  };
+}
+
+test('a book is not written off as coverless when the cover source was down', async () => {
+  const db = openDatabase(':memory:');
+  addBook(db, '9780000000020');
+
+  await runMaintenance(db, noSheet, { fetchImpl: outageFetch() });
+
+  const book = getBook(db, '9780000000020');
+  assert.equal(book.title, 'Metadata Only', 'what did arrive is kept');
+  assert.equal(book.cover_url, null);
+  assert.equal(book.enriched_at, null, 'but it is NOT marked finished');
+  assert.equal(getStats(db).pending, 1, 'so it is still queued for another look');
+});
+
+test('the retry succeeds once the source comes back', async () => {
+  const db = openDatabase(':memory:');
+  addBook(db, '9780000000021');
+
+  await runMaintenance(db, noSheet, { fetchImpl: outageFetch() });
+  assert.equal(getBook(db, '9780000000021').cover_url, null);
+
+  // Open Library recovers and supplies the jacket.
+  const recovered = async (url) => {
+    if (url.includes('googleapis.com/books')) {
+      return { ok: true, json: async () => ({ items: [{ volumeInfo: { title: 'Metadata Only', authors: ['A Writer'] } }] }) };
+    }
+    return {
+      ok: true,
+      json: async () => ({ 'ISBN:9780000000021': { title: 'Metadata Only', cover: { medium: 'https://covers.example/1.jpg' } } }),
+    };
+  };
+  await runMaintenance(db, noSheet, { fetchImpl: recovered });
+
+  const book = getBook(db, '9780000000021');
+  assert.equal(book.cover_url, 'https://covers.example/1.jpg');
+  assert.ok(book.enriched_at, 'and now it is finished');
+  assert.equal(getStats(db).pending, 0);
+});
+
+test('a 429 or a 500 counts as down, a 404 counts as an answer', async () => {
+  for (const status of [429, 503]) {
+    const db = openDatabase(':memory:');
+    addBook(db, '9780000000022');
+    await runMaintenance(db, noSheet, { fetchImpl: outageFetch({ status }) });
+    assert.equal(getBook(db, '9780000000022').enriched_at, null, `${status} should leave it pending`);
+  }
+
+  // 404 from Open Library is a real answer: this edition has no record there.
+  const db = openDatabase(':memory:');
+  addBook(db, '9780000000023');
+  await runMaintenance(db, noSheet, { fetchImpl: outageFetch({ status: 404 }) });
+  const book = getBook(db, '9780000000023');
+  assert.ok(book.enriched_at, '404 means the book really has no cover, so stop asking');
+  assert.equal(book.cover_url, null);
+});
+
+test('an unrecognised ISBN is still stamped, so it is not retried forever', async () => {
+  // The distinction that matters: nobody has heard of this book, but everyone
+  // answered. That is settled, unlike an outage.
+  const db = openDatabase(':memory:');
+  addBook(db, '9790000009999');
+
+  await runMaintenance(db, noSheet, { fetchImpl: fakeFetch({}) });
+
+  assert.ok(getBook(db, '9790000009999').enriched_at);
+  assert.equal(getStats(db).pending, 0);
+});
+
+test('a total outage leaves everything pending rather than stamped', async () => {
+  const db = openDatabase(':memory:');
+  for (let i = 0; i < 6; i += 1) addBook(db, `978000001${String(i).padStart(4, '0')}`);
+
+  const result = await runMaintenance(db, noSheet, { fetchImpl: fakeFetch({ fail: true }) });
+
+  assert.equal(result.enriched, 0);
+  assert.equal(getStats(db).pending, 6, 'nothing was written off');
+});

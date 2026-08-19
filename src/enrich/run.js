@@ -23,11 +23,16 @@ export async function enrichLibrary(db, {
 
   let enriched = 0;
   let failed = 0;
+  let incomplete = 0;
   let consecutiveFailures = 0;
   let abandoned = false;
 
   for (const book of candidates) {
-    const fields = await enrichIsbn(book.isbn, { apiKey, fetchImpl });
+    const result = await enrichIsbn(book.isbn, { apiKey, fetchImpl });
+    const degraded = result?.degraded;
+    // A result carrying nothing but a degraded list means every source was
+    // unreachable, which is a different thing from an unrecognised ISBN.
+    const fields = result && Object.keys(result).length > (degraded ? 1 : 0) ? result : null;
 
     // Every source failing in a row means the network is down, not that the
     // library is full of unknown books. Stop rather than stamp the whole
@@ -40,13 +45,24 @@ export async function enrichLibrary(db, {
 
     if (fields) {
       consecutiveFailures = 0;
-      const written = applyEnrichment(db, book.isbn, fields);
-      enriched += 1;
-      onProgress({ isbn: book.isbn, title: fields.title, written });
+      // Half an answer is not an answer. If a source was unreachable and the
+      // cover is still empty, keep what we got but leave the book unstamped so
+      // the next pass asks again. Stamping here is what silently wrote off 28
+      // covers during an Open Library outage: an empty cover from a source
+      // that never replied is indistinguishable from a book with no jacket.
+      const stamp = !(degraded && !fields.cover_url);
+      const written = applyEnrichment(db, book.isbn, fields, { stamp });
+      if (stamp) enriched += 1; else incomplete += 1;
+      onProgress({ isbn: book.isbn, title: fields.title, written, degraded });
+    } else if (degraded) {
+      // Nothing came back and we know why: leave it pending and try again.
+      consecutiveFailures += 1;
+      incomplete += 1;
+      onProgress({ isbn: book.isbn, title: null, written: [], degraded });
     } else {
       consecutiveFailures += 1;
-      // Nothing recognised the ISBN. Still stamp the attempt so it is not
-      // retried on every run; a forced refresh can try again later.
+      // Nothing recognised the ISBN, and every source answered. Stamp the
+      // attempt so it is not retried on every run; --refresh can try again.
       applyEnrichment(db, book.isbn, {});
       failed += 1;
       onProgress({ isbn: book.isbn, title: null, written: [] });
@@ -56,5 +72,5 @@ export async function enrichLibrary(db, {
     if (delayMs) await sleep(delayMs);
   }
 
-  return { considered: candidates.length, enriched, failed, abandoned };
+  return { considered: candidates.length, enriched, failed, incomplete, abandoned };
 }

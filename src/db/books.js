@@ -91,8 +91,12 @@ export function overriddenFields(db, isbn) {
  * This asymmetry is the whole point: enrichment runs unattended and repeatedly,
  * so it must never be able to undo a correction someone made deliberately.
  * Returns the fields it actually wrote.
+ *
+ * `stamp: false` keeps whatever was found without marking the book finished,
+ * so the next pass looks it up again. That is for the case where a source was
+ * unreachable: the book is not done, it is half-answered.
  */
-export function applyEnrichment(db, isbn, fields) {
+export function applyEnrichment(db, isbn, fields, { stamp = true } = {}) {
   const pinned = new Set(overriddenFields(db, isbn));
   const writable = Object.keys(fields)
     .filter((f) => ENRICHABLE_FIELDS.includes(f))
@@ -100,12 +104,17 @@ export function applyEnrichment(db, isbn, fields) {
     .filter((f) => fields[f] !== undefined);
 
   if (writable.length === 0) {
-    db.prepare('UPDATE books SET enriched_at = ? WHERE isbn = ?').run(now(), isbn);
+    if (stamp) db.prepare('UPDATE books SET enriched_at = ? WHERE isbn = ?').run(now(), isbn);
     return [];
   }
 
   const assignments = writable.map((f) => `${f} = ?`).join(', ');
   const values = writable.map((f) => encode(f, fields[f]));
+
+  if (!stamp) {
+    db.prepare(`UPDATE books SET ${assignments} WHERE isbn = ?`).run(...values, isbn);
+    return writable;
+  }
 
   db.prepare(`UPDATE books SET ${assignments}, enriched_at = ? WHERE isbn = ?`)
     .run(...values, now(), isbn);

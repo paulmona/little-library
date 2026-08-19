@@ -23,7 +23,13 @@ if (!config.googleBooks.apiKey) {
 const result = await enrichLibrary(db, {
   apiKey: config.googleBooks.apiKey,
   force,
-  onProgress: ({ isbn, title }) => console.log(title ? `  ${isbn}  ${title}` : `  ${isbn}  (not found)`),
+  onProgress: ({ isbn, title, degraded }) => {
+    const note = degraded ? `  (${degraded.join(', ')} unreachable, will retry)` : '';
+    console.log(title ? `  ${isbn}  ${title}${note}` : `  ${isbn}  (not found)${note}`);
+  },
 });
 
-console.log(`\nConsidered ${result.considered}, enriched ${result.enriched}, unresolved ${result.failed}.`);
+console.log(`\nConsidered ${result.considered}, enriched ${result.enriched}, unresolved ${result.failed}, left pending ${result.incomplete}.`);
+if (result.incomplete > 0) {
+  console.log('Books left pending had a source unreachable. Run again once it is back.');
+}
