@@ -4,8 +4,6 @@ A small self-hosted web app for cataloguing a [little free library](https://en.w
 
 Books are scanned by ISBN with a phone, land in a Google Sheet, and appear here with covers and metadata. You can browse them, correct anything the internet got wrong, and keep track of which books in a series you're still missing.
 
-It runs in a container on a machine you own. Nothing needs to be started or stopped, and nothing runs on your laptop.
-
 ## Status
 
 Early. The scaffold works; features are being built out. See the issue tracker.
